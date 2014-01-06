@@ -59,8 +59,6 @@ static void process(char const* file)
     free(alt.pixels);
     alt = img;
 
-    init_recolour();
-
     printf("%s: recolouring\n", file);
     img = recolour(img);
     free(alt.pixels);
@@ -92,6 +90,8 @@ int main(int argc, char* argv[])
         fprintf(stderr, "usage: %s pic1.jpg pic2.jpg pic3.jpg ...\n", argv[0]);
         return 255;
     }
+
+    init_recolour();
 
     for(i = 1; i < argc; process(argv[i++]));
 
