@@ -3,6 +3,8 @@ JakOestFilter
 
 Photo filter applied to my 2013-14 Austrian Holiday
 
+This project lives on http://github.com/alzwded/JakOestFilter/
+
 How it works
 ============
 

@@ -3,21 +3,29 @@
 #include <string.h>
 #include "common.h"
 
+/** abritrary maximum number of rules */
 #define MAXRULES 10
 
+/** represents a rule:
+  greater and lower are the colours you're targeting
+  factor is the factor which will grow one of the colours */
 typedef struct {
     RC_RGB_t greater, lower;
     float factor;
 } rule_t;
 
+/** useful macros used to limmit the values */
 #define SUP(X, K) ((X > K) ? K : X)
 #define INF(X, K) ((X > K) ? X : K)
 
+/** useful macro to extract a certain colour component */
 #define GET(P, C) (((uint8_t*)(&P))[(size_t)C])
 
+/** the rules */
 static rule_t rules[MAXRULES];
 static size_t nrules = 0;
 
+/** used to add a new rule */
 void recolour_addRule(
         RC_RGB_t greater,
         RC_RGB_t lower,
@@ -46,6 +54,7 @@ static inline void _process(pixel_t pin, pixel_t* p)
         uint8_t lower = GET(pin, rule.lower);
         if(greater > lower)
         {
+            // if the factor is >1, raise the greater component
             if(rule.factor >= 1.0) {
                 uint8_t greater = GET(*p, rule.greater);
                 uint8_t lower = GET(pin, rule.lower);
@@ -53,23 +62,25 @@ static inline void _process(pixel_t pin, pixel_t* p)
                 //printf(" from %d", GET(pin, rule.greater));
                 GET(*p, rule.greater) = (uint8_t)SUP(lower + diff, 255.f);
                 //printf(" to %d by %f\n", GET(*p, rule.greater), diff);
+            // else lower the lower component by 1/factor amount
             } else {
                 uint8_t greater = GET(pin, rule.greater);
                 uint8_t lower = GET(*p, rule.lower);
-                float diff = rule.factor * (float)(greater - lower);
+                float diff = (1.f / rule.factor) * (float)(greater - lower);
                 GET(*p, rule.lower) = (uint8_t)INF(greater - diff, 0.f);
             }
         }
     }
 }
 
+/** apply a colour transformation based on relationships between colour
+  components (RGB)
+  rules are added with recolour_addRule */
 img_t recolour(img_t const img)
 {
     img_t ret = { img.w, img.h, (pixel_t*)malloc(img.w * img.h * sizeof(pixel_t)) };
 
     size_t i, j;
-
-    //memcpy(ret.pixels, img.pixels, img.w * img.h * sizeof(pixel_t));
 
     for(i = 0; i < img.h; ++i) {
         for(j = 0; j < img.w; ++j) {

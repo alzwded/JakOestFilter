@@ -37,8 +37,8 @@ static void init_recolour()
 {
     recolour_addRule(RC_G, RC_R, 1.29);
     recolour_addRule(RC_G, RC_B, 1.25);
-    recolour_addRule(RC_R, RC_B, 1.3);
-    recolour_addRule(RC_B, RC_G, 0.7);
+    recolour_addRule(RC_R, RC_B, 0.7);
+    recolour_addRule(RC_B, RC_G, 0.9);
     recolour_addRule(RC_R, RC_G, 1.1);
 }
 
@@ -85,6 +85,8 @@ int main(int argc, char* argv[])
 #ifdef VERSION
     printf("Jak's Oesterreich photo filter %s\n", VERSION);
 #endif
+    printf("(C) Vlad Mesco, all rights reserved.\n");
+    printf("See LICENSE for information on the terms this software is provided under\n");
 
     if(argc <= 1) {
         fprintf(stderr, "usage: %s pic1.jpg pic2.jpg pic3.jpg ...\n", argv[0]);

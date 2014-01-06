@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <jpeglib.h>
 #include <assert.h>
 #include <stdint.h>
+
+#include <jpeglib.h>
+
 #include "common.h"
 
+/** read the pixels from a jpeg file */
 img_t readPixels(char const* file)
 {
     img_t ret = { 0, 0, NULL };
@@ -29,7 +32,6 @@ img_t readPixels(char const* file)
     jpeg_read_header(&cinfo, TRUE);
 
     jpeg_start_decompress(&cinfo);
-    printf("components = %d\n", cinfo.num_components);
     assert(cinfo.num_components == 3);
 
     ret.w = cinfo.output_width;
@@ -58,6 +60,7 @@ img_t readPixels(char const* file)
     return ret;
 }
 
+/** store pixels in a jpeg file */
 int savePixels(img_t const img, char const* file)
 {
     struct jpeg_compress_struct cinfo;

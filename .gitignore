@@ -22,3 +22,5 @@ runt
 *.jpg
 *.log
 log
+dist
+*.tbz
