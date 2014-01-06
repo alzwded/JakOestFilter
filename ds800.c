@@ -4,24 +4,25 @@
 #include <math.h>
 #include "common.h"
 
+/** pi / 2 */
 #define PI_2 (3.14159 / 2.0)
+/** distribution function used to smudge pixels together */
 #define SKEW(X) ((PI_2 - atan(X)) / PI_2)
 
+/** smudge pixels in a target pixel's vecinity together */
 static inline void _modif(pixel_t* p, img_t const img, float vh, float vw, size_t i, size_t j)
 {
     float r = .0f, g = .0f, b = .0f;
     float s = .0f;
+    long ii, jj;
 
+    // define the vecinity
     long minh = (long)(((long)i - 1) * (vh));
     long minw = (long)(((long)j - 1) * (vw));
     long maxh = (long)(((long)i + 1) * (vh));
     long maxw = (long)(((long)j + 1) * (vw));
 
-    //printf("\t%f %f\n", vw, vh);
-    //printf("\t%ld %ld %ld %ld\n", minh, maxh, minw, maxw);
-
-    long ii, jj;
-
+    // transform
     for(ii = minh; ii <= maxh; ++ii) {
         if(ii < 0 || ii >= img.h) continue;
         for(jj = minw; jj <= maxw; ++jj) {
@@ -33,7 +34,8 @@ static inline void _modif(pixel_t* p, img_t const img, float vh, float vw, size_
             float dist = abs( y * y + x * x ) / (vv * vv);
             float skew = 0.0;
 
-            dist = dist * dist * dist * dist;
+            //dist = dist * dist * dist * dist;
+            dist = dist * dist;
 
             skew = SKEW(dist);
 
@@ -44,11 +46,13 @@ static inline void _modif(pixel_t* p, img_t const img, float vh, float vw, size_
         }
     }
 
+    // save pixel
     (*p).r = (int)(r / s);
     (*p).g = (int)(g / s);
     (*p).b = (int)(b / s);
 }
 
+/** downsample a picture to 800x800 */
 img_t downSample800(img_t const img)
 {
     img_t ret = { 800, 800, (pixel_t*)malloc(800 * 800 * sizeof(pixel_t)) };
@@ -61,13 +65,13 @@ img_t downSample800(img_t const img)
     assert(img.w >= 800 && img.h >= 800);
 
     for(i = 0; i < ret.h; ++i) {
+        // track progress
         if(i % 50 == 0) {
             printf(" %.0f%%", (float)i * 100.0f / ret.h);
             fflush(stdout);
         }
         for(j = 0; j < ret.w; ++j) {
             _modif(&A(ret, i, j), img, vh, vw, i, j);
-
         }
     }
     printf(" 100%%\n");

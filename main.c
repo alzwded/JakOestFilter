@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "common.h"
 
+// external subroutines
 extern img_t readPixels(char const*);
 extern int savePixels(img_t const, char const*);
 
@@ -11,7 +12,8 @@ extern img_t downSample800(img_t const);
 extern img_t recolour(img_t const);
 extern img_t frame(img_t const);
 
-char* getOutFileName(char const* file)
+/** generate the output file name */
+static char* getOutFileName(char const* file)
 {
     size_t len = strlen(file);
     char const* i = file + len - 1;
@@ -30,6 +32,7 @@ char* getOutFileName(char const* file)
     return ret;
 }
 
+/** initialise the recolouring engine */
 static void init_recolour()
 {
     recolour_addRule(RC_G, RC_R, 1.29);
@@ -39,6 +42,7 @@ static void init_recolour()
     recolour_addRule(RC_R, RC_G, 1.1);
 }
 
+/** apply transformations on a file */
 static void process(char const* file)
 {
     printf("%s: reading pixels\n", file);
@@ -87,9 +91,7 @@ int main(int argc, char* argv[])
         return 255;
     }
 
-    for(i = 1; i < argc; ++i) {
-        process(argv[i]);
-    }
+    for(i = 1; i < argc; process(argv[i++]));
 
     return 0;
 }

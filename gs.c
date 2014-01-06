@@ -2,6 +2,7 @@
 #include <string.h>
 #include "common.h"
 
+/** extract the central square of an image */
 img_t getSquare(img_t const img)
 {
     size_t l = (img.w > img.h) ? img.h : img.w;
