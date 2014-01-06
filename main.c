@@ -30,6 +30,15 @@ char* getOutFileName(char const* file)
     return ret;
 }
 
+static void init_recolour()
+{
+    recolour_addRule(RC_G, RC_R, 1.29);
+    recolour_addRule(RC_G, RC_B, 1.25);
+    recolour_addRule(RC_R, RC_B, 1.3);
+    recolour_addRule(RC_B, RC_G, 0.7);
+    recolour_addRule(RC_R, RC_G, 1.1);
+}
+
 void process(char const* file)
 {
     printf("%s: reading pixels\n", file);
@@ -41,23 +50,25 @@ void process(char const* file)
     free(alt.pixels);
     alt = img;
 
-    //printf("%s: downsampling\n", file);
-    //img = downSample800(img);
-    //free(alt.pixels);
-    //alt = img;
+    printf("%s: downsampling\n", file);
+    img = downSample800(img);
+    free(alt.pixels);
+    alt = img;
 
-    //printf("%s: recolouring\n", file);
-    //img = recolour(img);
-    //free(alt.pixels);
-    //alt = img;
+    init_recolour();
+
+    printf("%s: recolouring\n", file);
+    img = recolour(img);
+    free(alt.pixels);
+    alt = img;
 
     printf("%s: framing\n", file);
     img = frame(img);
     free(alt.pixels);
     //alt = img;
 
-    printf("%s: saving\n", file);
     char* outFile = getOutFileName(file);
+    printf("%s: saving as %s\n", file, outFile);
     savePixels(img, outFile);
     free(outFile);
     free(img.pixels);

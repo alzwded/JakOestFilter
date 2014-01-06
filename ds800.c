@@ -61,10 +61,10 @@ img_t downSample800(img_t const img)
     assert(img.w >= 800 && img.h >= 800);
 
     for(i = 0; i < ret.h; ++i) {
-        if(i % 10 == 0) {
-            printf(" %.0f%%\n", (float)i / ret.h);
+        if(i % 50 == 0) {
+            printf(" %.0f%%", (float)i * 100.0f / ret.h);
+            fflush(stdout);
         }
-        printf("\tscanline %d\n", i);
         for(j = 0; j < ret.w; ++j) {
             _modif(&A(ret, i, j), img, vh, vw, i, j);
 
