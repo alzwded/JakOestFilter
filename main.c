@@ -3,12 +3,13 @@
 #include <stdlib.h>
 #include "common.h"
 
-extern pixel_t* readPixels(char const*);
-extern int savePixels(pixel_t const*, char const*);
+extern img_t readPixels(char const*);
+extern int savePixels(img_t const, char const*);
 
-extern pixel_t* getSquare(pixel_t const*);
-extern pixel_t* downSample800(pixel_t const*);
-extern pixel_t* recolour(pixel_t const*);
+extern img_t getSquare(img_t const);
+extern img_t downSample800(img_t const);
+extern img_t recolour(img_t const);
+extern img_t frame(img_t const);
 
 char* getOutFileName(char const* file)
 {
@@ -31,24 +32,35 @@ char* getOutFileName(char const* file)
 
 void process(char const* file)
 {
-    pixel_t* img = readPixels(file);
-    pixel_t* alt = img;
+    printf("%s: reading pixels\n", file);
+    img_t img = readPixels(file);
+    img_t alt = img;
 
+    printf("%s: getting square\n", file);
     img = getSquare(img);
-    free(alt);
+    free(alt.pixels);
     alt = img;
 
-    img = downSample800(img);
-    free(alt);
-    alt = img;
+    //printf("%s: downsampling\n", file);
+    //img = downSample800(img);
+    //free(alt.pixels);
+    //alt = img;
 
-    img = recolour(img);
-    free(alt);
+    //printf("%s: recolouring\n", file);
+    //img = recolour(img);
+    //free(alt.pixels);
+    //alt = img;
 
+    printf("%s: framing\n", file);
+    img = frame(img);
+    free(alt.pixels);
+    //alt = img;
+
+    printf("%s: saving\n", file);
     char* outFile = getOutFileName(file);
     savePixels(img, outFile);
     free(outFile);
-    free(img);
+    free(img.pixels);
 }
 
 int main(int argc, char* argv[])

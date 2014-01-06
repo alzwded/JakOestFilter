@@ -1,9 +1,9 @@
 CC = gcc
-CFLAGS = -c -g -I. --std=c99
+CFLAGS = -c -O3 -I. --std=c99
 LD = gcc
-LDOPTS = -ljpeg
+LDOPTS = -ljpeg -lm
 
-OBJS = main.o ds800.o gs.o pixelio.o rc.o
+OBJS = main.o ds800.o gs.o pixelio.o rc.o frame.o
 
 EXE = jakoest
 

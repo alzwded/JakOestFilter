@@ -5,6 +5,11 @@ typedef struct {
     unsigned char r, g, b;
 } pixel_t;
 
-#define A800(p, x, y) (p[800 * x + y])
+typedef struct {
+    size_t w, h;
+    pixel_t* pixels;
+} img_t;
+
+#define A(I, x, y) (I.pixels[I.w * x + y])
 
 #endif
