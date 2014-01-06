@@ -1,4 +1,4 @@
-VERSION = '"v1.0"'
+VERSION = '"v1.0.1"'
 CC = gcc
 CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION)
 LD = gcc
