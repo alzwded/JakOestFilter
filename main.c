@@ -39,7 +39,7 @@ static void init_recolour()
     recolour_addRule(RC_R, RC_G, 1.1);
 }
 
-void process(char const* file)
+static void process(char const* file)
 {
     printf("%s: reading pixels\n", file);
     img_t img = readPixels(file);
@@ -77,6 +77,10 @@ void process(char const* file)
 int main(int argc, char* argv[])
 {
     int i;
+
+#ifdef VERSION
+    printf("Jak's Oesterreich photo filter %s\n", VERSION);
+#endif
 
     if(argc <= 1) {
         fprintf(stderr, "usage: %s pic1.jpg pic2.jpg pic3.jpg ...\n", argv[0]);

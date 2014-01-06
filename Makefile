@@ -1,5 +1,6 @@
+VERSION = '"v1.0"'
 CC = gcc
-CFLAGS = -c -O3 -I. --std=c99
+CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION)
 LD = gcc
 LDOPTS = -ljpeg -lm
 
