@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
+#include "JakWorkers.h"
 
 /** abritrary maximum number of rules */
 #define MAXRULES 10
@@ -73,6 +74,23 @@ static inline void _process(pixel_t pin, pixel_t* p)
     }
 }
 
+typedef struct {
+    size_t i;
+    img_t in, out;
+} tdata_t;
+
+static void _tprocess(void* data)
+{
+    tdata_t* mydata = (tdata_t*)data;
+    size_t j;
+
+    for(j = 0; j < mydata->in.w; ++j) {
+        _process(A(mydata->in, mydata->i, j), &A(mydata->out, mydata->i, j));
+    }
+
+    free(mydata);
+}
+
 /** apply a colour transformation based on relationships between colour
   components (RGB)
   rules are added with recolour_addRule */
@@ -82,11 +100,17 @@ img_t recolour(img_t const img)
 
     size_t i, j;
 
+    jw_config_t conf = JW_CONFIG_INITIALIZER;
+    jw_init(conf);
+
     for(i = 0; i < img.h; ++i) {
-        for(j = 0; j < img.w; ++j) {
-            _process(A(img, i, j), &A(ret, i, j));
-        }
+        tdata_t* data = (tdata_t*)malloc(sizeof(tdata_t));
+        data->i = i;
+        data->in = img;
+        data->out = ret;
+        jw_add_job(&_tprocess, data);
     }
+    jw_main();
     
     return ret;
 }

@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <math.h>
 #include "common.h"
+#include "JakWorkers.h"
 
 /** pi / 2 */
 #define PI_2 (3.14159 / 2.0)
@@ -52,6 +53,23 @@ static inline void _modif(pixel_t* p, img_t const img, float vh, float vw, size_
     (*p).b = (int)(b / s);
 }
 
+typedef struct {
+    img_t* ret;
+    img_t img;
+    float vh, vw;
+    size_t i, retw;
+} tdata_t;
+
+static void tDS(void* data)
+{
+    tdata_t* mydata = (tdata_t*)data;
+    size_t j;
+    for(j = 0; j < mydata->retw; ++j) {
+        _modif(&A((*(mydata->ret)), mydata->i, j), mydata->img, mydata->vh, mydata->vw, mydata->i, j);
+    }
+    free(mydata);
+}
+
 /** downsample a picture to 800x800 */
 img_t downSample800(img_t const img)
 {
@@ -62,19 +80,22 @@ img_t downSample800(img_t const img)
     float vw = (float)img.w / ret.w;
     float vh = (float)img.h / ret.h;
 
+    jw_config_t conf = JW_CONFIG_INITIALIZER;
+    jw_init(conf);
+
     assert(img.w >= 800 && img.h >= 800);
 
     for(i = 0; i < ret.h; ++i) {
-        // track progress
-        if(i % 50 == 0) {
-            printf(" %.0f%%", (float)i * 100.0f / ret.h);
-            fflush(stdout);
-        }
-        for(j = 0; j < ret.w; ++j) {
-            _modif(&A(ret, i, j), img, vh, vw, i, j);
-        }
+        tdata_t* data = (tdata_t*)malloc(sizeof(tdata_t));
+        data->ret = &ret;
+        data->img = img;
+        data->vh = vh;
+        data->vw = vw;
+        data->i = i;
+        data->retw = ret.w;
+        jw_add_job(&tDS, data);
     }
-    printf(" 100%%\n");
+    jw_main();
 
     return ret;
 }
