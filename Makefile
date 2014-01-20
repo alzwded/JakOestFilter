@@ -2,7 +2,7 @@ VERSION = '"v1.1"'
 CC = gcc
 CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION)
 LD = gcc
-LDOPTS = -ljpeg -lm
+LDOPTS = -ljpeg -lm -lrt
 
 OBJS = main.o ds800.o gs.o pixelio.o rc.o frame.o
 
