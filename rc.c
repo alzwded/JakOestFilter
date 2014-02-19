@@ -51,22 +51,21 @@ static inline void _process(pixel_t pin, pixel_t* p)
 
     for(i = 0; i < nrules; ++i) {
         rule_t rule = rules[i];
-        uint8_t greater = GET(pin, rule.greater);
-        uint8_t lower = GET(pin, rule.lower);
-        if(greater > lower)
-        {
-            // if the factor is >1, raise the greater component
-            if(rule.factor >= 1.0) {
-                uint8_t greater = GET(*p, rule.greater);
-                uint8_t lower = GET(pin, rule.lower);
+        // if the factor is >1, raise the greater component
+        // else lower the lower component by 1/factor amount
+        if(rule.factor >= 1.0) {
+            uint8_t greater = GET(*p, rule.greater);
+            uint8_t lower = GET(pin, rule.lower);
+            if(greater > lower) {
                 float diff = rule.factor * (float)(greater - lower);
                 //printf(" from %d", GET(pin, rule.greater));
                 GET(*p, rule.greater) = (uint8_t)SUP(lower + diff, 255.f);
                 //printf(" to %d by %f\n", GET(*p, rule.greater), diff);
-            // else lower the lower component by 1/factor amount
-            } else {
-                uint8_t greater = GET(pin, rule.greater);
-                uint8_t lower = GET(*p, rule.lower);
+            }
+        } else {
+            uint8_t greater = GET(pin, rule.greater);
+            uint8_t lower = GET(*p, rule.lower);
+            if(greater > lower) {
                 float diff = (1.f / rule.factor) * (float)(greater - lower);
                 GET(*p, rule.lower) = (uint8_t)INF(greater - diff, 0.f);
             }
