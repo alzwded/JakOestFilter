@@ -91,7 +91,7 @@ static void _detdist(img_t img)
     //printf("at %d\n", current);
     for(i = 0; i < 256; ++i) {
         count += (cls[i] > 0);
-        if(count >= thresh) {
+        if(count > thresh) {
             ++current;
             count = 0;
             //printf("with %d at %d\n", i, current);
