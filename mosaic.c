@@ -75,26 +75,19 @@ static void _detdist(img_t img)
                     + GET(p, RC_G)
                     + GET(p, RC_B)
                     ) / 3.f;
-            if(cls[med] == 0) {
-                //printf("med: %d\n", med);
-                //printf("cls med: %d\n", cls[med]);
-                thresh++;
-            }
+            thresh += cls[med] == 0;
             cls[med] = 1;
         }
     }
 
-    //printf("thresh: %d\n", thresh);
     thresh /= ncolours;
     current = count = 0;
 
-    //printf("at %d\n", current);
     for(i = 0; i < 256; ++i) {
         count += (cls[i] > 0);
         if(count > thresh) {
             ++current;
             count = 0;
-            //printf("with %d at %d\n", i, current);
         }
 
         distrib[i] = current;
