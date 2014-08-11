@@ -1,13 +1,13 @@
 PLA = i386
-RVERSION = 1.2
+RVERSION = 1.3
 VERSION = '"'$(RVERSION)'"'
 CC = gcc
 CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION)
 LD = gcc
 LDOPTS = -ljpeg -lm -lrt
-SRCS = main.c ds800.c gs.c pixelio.c rc.c frame.c common.h Makefile
+SRCS = main.c ds800.c gs.c pixelio.c rc.c frame.c common.h mosaic.c Makefile
 
-OBJS = main.o ds800.o gs.o pixelio.o rc.o frame.o
+OBJS = main.o ds800.o gs.o pixelio.o rc.o frame.o mosaic.o
 
 EXE = jakoest
 

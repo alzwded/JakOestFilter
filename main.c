@@ -12,6 +12,10 @@ extern img_t downSample800(img_t const);
 extern img_t recolour(img_t const);
 extern img_t frame(img_t const);
 
+extern img_t mosaic(img_t const);
+
+img_t (*rec_fn)(img_t const) = NULL;
+
 /** generate the output file name */
 static char* getOutFileName(char const* file)
 {
@@ -40,6 +44,21 @@ static void init_recolour()
     recolour_addRule(RC_R, RC_B, 0.7);
     recolour_addRule(RC_B, RC_G, 0.9);
     recolour_addRule(RC_R, RC_G, 1.1);
+
+    mosaic_addColour(0, 0, 0);
+    mosaic_addColour(0x20, 0x20, 0x20);
+    mosaic_addColour(0x40, 0x40, 0x40);
+    mosaic_addColour(0x80, 0x80, 0x80);
+    mosaic_addColour(0xA0, 0xA0, 0xA0);
+
+    mosaic_addColour(128, 128, 192); // soft blue
+    mosaic_addColour(0xC0, 0x80, 0x80); // deep purple
+    mosaic_addColour(250, 127, 127); // soft bright red
+    mosaic_addColour(195, 230, 135); // light green
+    mosaic_addColour(222, 222, 155); // yellow
+
+    mosaic_addColour(0xC0, 0xC0, 0xC0);
+    mosaic_addColour(255, 255, 255);
 }
 
 /** apply transformations on a file */
@@ -60,20 +79,30 @@ static void process(char const* file)
     alt = img;
 
     printf("%s: recolouring\n", file);
-    img = recolour(img);
+    img = rec_fn(img);
     free(alt.pixels);
     alt = img;
 
-    printf("%s: framing\n", file);
-    img = frame(img);
-    free(alt.pixels);
-    //alt = img;
+    if(rec_fn != mosaic) {
+        printf("%s: framing\n", file);
+        img = frame(img);
+        free(alt.pixels);
+        //alt = img;
+    }
 
     char* outFile = getOutFileName(file);
     printf("%s: saving as %s\n", file, outFile);
     savePixels(img, outFile);
     free(outFile);
     free(img.pixels);
+}
+
+void usage(char const* name)
+{
+    fprintf(stderr, "usage: %s <filter> pic1.jpg pic2.jpg pic3.jpg ...\n", name);
+    fprintf(stderr, "    filter may be: -1 (original)\n");
+    fprintf(stderr, "                   -2 (mosaic)\n");
+    exit(255);
 }
 
 int main(int argc, char* argv[])
@@ -86,14 +115,28 @@ int main(int argc, char* argv[])
     printf("(C) Vlad Mesco, all rights reserved.\n");
     printf("See LICENSE for information on the terms this software is provided under\n");
 
-    if(argc <= 1) {
-        fprintf(stderr, "usage: %s pic1.jpg pic2.jpg pic3.jpg ...\n", argv[0]);
-        return 255;
+    if(argc <= 2
+            || argv[1][0] != '-')
+    {
+        usage(argv[0]);
+    }
+
+    if(strlen(argv[1]) != 2) usage(argv[0]);
+
+    switch(argv[1][1]) {
+    case '1':
+        rec_fn = recolour;
+        break;
+    case '2':
+        rec_fn = mosaic;
+        break;
+    default:
+        usage(argv[0]);
     }
 
     init_recolour();
 
-    for(i = 1; i < argc; process(argv[i++]));
+    for(i = 2; i < argc; process(argv[i++]));
 
     return 0;
 }

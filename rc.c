@@ -15,13 +15,6 @@ typedef struct {
     float factor;
 } rule_t;
 
-/** useful macros used to limmit the values */
-#define SUP(X, K) ((X > K) ? K : X)
-#define INF(X, K) ((X > K) ? X : K)
-
-/** useful macro to extract a certain colour component */
-#define GET(P, C) (((uint8_t*)(&P))[(size_t)C])
-
 /** the rules */
 static rule_t rules[MAXRULES];
 static size_t nrules = 0;
