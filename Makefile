@@ -2,12 +2,13 @@ PLA = i386
 RVERSION = 1.3
 VERSION = '"'$(RVERSION)'"'
 CC = gcc
-CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION)
+#CFLAGS = -c -O3 -I. -I../libjpegturbo/opt/libjpeg-turbo/include --std=c99 -DVERSION=$(VERSION)
+CFLAGS = -pthread -c -O0 -g -I. -I../libjpegturbo/opt/libjpeg-turbo/include --std=c99 -DVERSION=$(VERSION)
 LD = gcc
-LDOPTS = -ljpeg -lm -lrt
-SRCS = main.c ds800.c gs.c pixelio.c rc.c frame.c common.h mosaic.c Makefile
+LDOPTS = -L. -L/home/mspozw/Projects/libjpegturbo/opt/libjpeg-turbo/bin -ljpeg -lm -lrt
+SRCS = main.c ds800.c gs.c pixelio.c rc.c frame.c common.h mosaic.c mobord.c Makefile
 
-OBJS = main.o ds800.o gs.o pixelio.o rc.o frame.o mosaic.o
+OBJS = main.o ds800.o gs.o pixelio.o rc.o frame.o mosaic.o mobord.o
 
 EXE = jakoest
 

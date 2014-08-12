@@ -14,6 +14,8 @@ extern img_t frame(img_t const);
 
 extern img_t mosaic(img_t const);
 
+extern img_t mobord(img_t const);
+
 img_t (*rec_fn)(img_t const) = NULL;
 
 /** generate the output file name */
@@ -83,7 +85,7 @@ static void process(char const* file)
     free(alt.pixels);
     alt = img;
 
-    if(rec_fn != mosaic) {
+    if(rec_fn == recolour) {
         printf("%s: framing\n", file);
         img = frame(img);
         free(alt.pixels);
@@ -102,6 +104,7 @@ void usage(char const* name)
     fprintf(stderr, "usage: %s <filter> pic1.jpg pic2.jpg pic3.jpg ...\n", name);
     fprintf(stderr, "    filter may be: -1 (original)\n");
     fprintf(stderr, "                   -2 (mosaic)\n");
+    fprintf(stderr, "                   -3 (mobord)\n");
     exit(255);
 }
 
@@ -129,6 +132,9 @@ int main(int argc, char* argv[])
         break;
     case '2':
         rec_fn = mosaic;
+        break;
+    case '3':
+        rec_fn = mobord;
         break;
     default:
         usage(argv[0]);
