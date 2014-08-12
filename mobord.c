@@ -6,16 +6,17 @@
 
 static inline void _process(pixel_t pin[], pixel_t* p)
 {
-    size_t i = 0;
-
 #define COMP(A, B) (memcmp((unsigned char*)&A, (unsigned char*)&B, 3 * sizeof(uint8_t)) == 0)
-    if(COMP(pin[0], pin[4]) ^ COMP(pin[4], pin[8])
-            || COMP(pin[1], pin[4]) ^ COMP(pin[4], pin[7])
-            || COMP(pin[2], pin[4]) ^ COMP(pin[4], pin[6])
-            || COMP(pin[3], pin[4]) ^ COMP(pin[4], pin[5])
+    if(COMP(pin[0], pin[4]) && !COMP(pin[4], pin[8])
+            || COMP(pin[1], pin[4]) && !COMP(pin[4], pin[7])
+            || COMP(pin[2], pin[4]) && !COMP(pin[4], pin[6])
+            || COMP(pin[3], pin[4]) && !COMP(pin[4], pin[5])
     ) {
         static pixel_t black = { 0, 0, 0 };
         *p = black;
+        return;
+    } else {
+        *p = pin[4];
         return;
     }
 #undef COMP
@@ -82,6 +83,7 @@ img_t mobord(img_t const img)
     img_t tmp = mosaic(img);
 
     jw_config_t conf = JW_CONFIG_INITIALIZER;
+    conf.numWorkers = 1;
 
     // process
     jw_init(conf);

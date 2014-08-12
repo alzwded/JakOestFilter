@@ -41,26 +41,37 @@ static char* getOutFileName(char const* file)
 /** initialise the recolouring engine */
 static void init_recolour()
 {
-    recolour_addRule(RC_G, RC_R, 1.29);
-    recolour_addRule(RC_G, RC_B, 1.25);
-    recolour_addRule(RC_R, RC_B, 0.7);
-    recolour_addRule(RC_B, RC_G, 0.9);
-    recolour_addRule(RC_R, RC_G, 1.1);
+    if(rec_fn == recolour) {
+        recolour_addRule(RC_G, RC_R, 1.29);
+        recolour_addRule(RC_G, RC_B, 1.25);
+        recolour_addRule(RC_R, RC_B, 0.7);
+        recolour_addRule(RC_B, RC_G, 0.9);
+        recolour_addRule(RC_R, RC_G, 1.1);
+    } else if(rec_fn == mobord) {
+        mosaic_addColour(20, 20, 60);
+        mosaic_addColour(60, 60, 100);
+        mosaic_addColour(128, 128, 192); // soft blue
+        mosaic_addColour(0xC0, 0x80, 0x80); // deep purple
+        mosaic_addColour(250, 127, 127); // soft bright red
+        mosaic_addColour(195, 230, 135); // light green
+        mosaic_addColour(225, 237, 147); // yellow
+        mosaic_addColour(250, 250, 142); // yellow2
+    } else if(rec_fn == mosaic) {
+        mosaic_addColour(0, 0, 0);
+        mosaic_addColour(0x20, 0x20, 0x20);
+        mosaic_addColour(0x40, 0x40, 0x40);
+        mosaic_addColour(0x80, 0x80, 0x80);
+        mosaic_addColour(0xA0, 0xA0, 0xA0);
 
-    mosaic_addColour(0, 0, 0);
-    mosaic_addColour(0x20, 0x20, 0x20);
-    mosaic_addColour(0x40, 0x40, 0x40);
-    mosaic_addColour(0x80, 0x80, 0x80);
-    mosaic_addColour(0xA0, 0xA0, 0xA0);
+        mosaic_addColour(128, 128, 192); // soft blue
+        mosaic_addColour(0xC0, 0x80, 0x80); // deep purple
+        mosaic_addColour(250, 127, 127); // soft bright red
+        mosaic_addColour(195, 230, 135); // light green
+        mosaic_addColour(222, 222, 155); // yellow
 
-    mosaic_addColour(128, 128, 192); // soft blue
-    mosaic_addColour(0xC0, 0x80, 0x80); // deep purple
-    mosaic_addColour(250, 127, 127); // soft bright red
-    mosaic_addColour(195, 230, 135); // light green
-    mosaic_addColour(222, 222, 155); // yellow
-
-    mosaic_addColour(0xC0, 0xC0, 0xC0);
-    mosaic_addColour(255, 255, 255);
+        mosaic_addColour(0xC0, 0xC0, 0xC0);
+        mosaic_addColour(255, 255, 255);
+    }
 }
 
 /** apply transformations on a file */
