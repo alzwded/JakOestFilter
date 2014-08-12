@@ -41,6 +41,16 @@ The output files will be named `file1.out.jpg`, `file2.out.jpg` etc.
 Changelog
 =========
 
+v1.3.1
+------
+
+Added a filter that actually looks a bit like a mosaic -- mobord.
+
+v1.3
+----
+
+Added mosaic filter.
+
 v1.2
 ----
 
