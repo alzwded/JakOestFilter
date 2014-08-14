@@ -6,7 +6,7 @@
 #include "JakWorkers.h"
 
 #define SATTHRESH (0.1f)
-#define VALHRESH (0.2f)
+#define VALTHRESH (0.2f)
 
 typedef struct {
     short hue;
