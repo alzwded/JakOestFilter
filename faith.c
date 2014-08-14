@@ -5,6 +5,9 @@
 #include "common.h"
 #include "JakWorkers.h"
 
+#define SATTHRESH (0.1f)
+#define VALHRESH (0.2f)
+
 typedef struct {
     short hue;
     float saturation, value;
@@ -37,7 +40,14 @@ static struct {
     { 999.f, 0 },
 };
 
-short C1, C2, C3;
+static short C1, C2, C3;
+
+static inline int _underThresh(hsv_t p)
+{
+    if(p.saturation < SATTHRESH) return 1;
+    if(p.value < VALTHRESH) return 1;
+    return 0;
+}
 
 static inline hsv_t _toHSV(pixel_t p)
 {
@@ -162,24 +172,6 @@ static inline pixel_t _fromHSV(hsv_t p)
     return ret;
 }
 
-static inline void _process(pixel_t pin[], pixel_t* p)
-{
-#define COMP(A, B) (memcmp((unsigned char*)&A, (unsigned char*)&B, 3 * sizeof(uint8_t)) == 0)
-    if(COMP(pin[0], pin[4]) && !COMP(pin[4], pin[8])
-            || COMP(pin[1], pin[4]) && !COMP(pin[4], pin[7])
-            || COMP(pin[2], pin[4]) && !COMP(pin[4], pin[6])
-            || COMP(pin[3], pin[4]) && !COMP(pin[4], pin[5])
-    ) {
-        static pixel_t black = { 0, 0, 0 };
-        *p = black;
-        return;
-    } else {
-        *p = pin[4];
-        return;
-    }
-#undef COMP
-}
-
 typedef struct {
     size_t i;
     union {
@@ -251,6 +243,7 @@ static void _preproc(hsvimg_t img)
     for(i = 0; i < img.h; ++i) {
         for(j = 0; j < img.w; ++j) {
             A(img, i, j).value = (A(img, i, j).value - min) / max;
+            if(_underThresh(A(img, i, j))) continue;
             partitions[PARTITION(A(img, i, j).hue)]++;
         }
     }
@@ -269,6 +262,7 @@ static void _preproc(hsvimg_t img)
     for(i = 0; i < img.h; ++i) {
         for(j = 0; j < img.w; ++j) {
             if(PARTITION(A(img, i, j).hue) == C1partition) continue;
+            if(_underThresh(A(img, i, j))) continue;
             hh += A(img, i, j).hue;
             ++n;
         }
@@ -300,7 +294,9 @@ static void _proc_bulk(void* data)
               dC2 = dist(p.hue, C2),
               dC3 = dist(p.hue, C3);
 
-        if(dC1 < dC2 && dC1 < dC3) {
+        if(_underThresh) {
+            p.saturation = 0.f;
+        } else if(dC1 < dC2 && dC1 < dC3) {
             p.hue = C1;
             p.value = 0.5f;
             p.saturation = p.saturation / 2.f + 0.5f;
