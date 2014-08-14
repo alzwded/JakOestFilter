@@ -297,7 +297,9 @@ static void _proc_bulk(void* data)
         } else if(dC2 < dC1 && dC2 < dC3) {
             p.hue = C2;
             p.saturation = p.saturation / 2.f + 0.5f;
+            p.value = _redistribVal(p.value);
         } else /*if(dC3 < dC1 && dC3 < dC2)*/ {
+            p.hue = 0;
             p.saturation = 0.f;
             p.value = _redistribVal(p.value);
         }
