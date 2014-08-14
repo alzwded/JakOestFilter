@@ -291,9 +291,19 @@ static void _proc_bulk(void* data)
         if(_underThresh(p)) {
             p.saturation = 0.f;
         } else if(dC1 < dC2 && dC1 < dC3) {
+#ifdef ALT_C1
+            // bad alternative
             p.hue = C1;
             p.value = 0.5f;
             p.saturation = p.saturation / 2.f + 0.5f;
+#else
+            // better alternative?
+            p.hue = C1;
+            # define SATAMOUNT 8.f
+            # define TAILSAT / SATAMOUNT + (SATAMOUNT - 1.f) / SATAMOUNT;
+            p.saturation = p.saturation TAILSAT;
+            //p.value = _redistribVal(p.value);
+#endif
         } else if(dC2 < dC1 && dC2 < dC3) {
             p.hue = C2;
             p.saturation = p.saturation / 2.f + 0.5f;
