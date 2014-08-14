@@ -195,17 +195,6 @@ static void _proc_toHSV(void* data)
     }
 }
 
-static void _proc_fromHSV(void* data)
-{
-    tdata_t* mydata = (tdata_t*)data;
-    size_t j;
-
-    for(j = 0; j < mydata->in.asHSV.w; ++j) {
-        A(mydata->out.asRGB, mydata->i, j) = 
-            _fromHSV(A(mydata->in.asHSV, mydata->i, j));
-    }
-}
-
 static inline size_t PARTITION(float X)
 {
     size_t ii;
