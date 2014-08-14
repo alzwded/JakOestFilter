@@ -111,8 +111,8 @@ static inline hsv_t _toHSV(pixel_t p)
     }
 
     ret.hue = SUP(60.f * Hp, 360.f);
-    ret.value = M;
-    ret.saturation = (ret.value == 0) ? 0.f : ((float)C / ret.value);
+    ret.saturation = (M == 0) ? 0.f : ((float)C / M);
+    ret.value = M / 255.f;
 
     return ret;
 }
@@ -125,12 +125,13 @@ static inline pixel_t _fromHSV(hsv_t p)
 
 	if(p.saturation < 1.e-5f) {
         pixel_t ret;
-        ret.r = ret.g = ret.b = p.value;
+        ret.r = ret.g = ret.b = SUP(p.value * 255.f, 255);
 		return ret;
 	}
 
 	Hp = floorf(p.hue / 60.f);
 	f = (p.hue / 60.f) - Hp;
+    p.value *= 255.f;
 	P = p.value * (1 - p.saturation);
 	Q = p.value * (1 - p.saturation * f);
 	T = p.value * (1 - p.saturation * (1 - f));
@@ -171,7 +172,7 @@ static inline pixel_t _fromHSV(hsv_t p)
         break;
 	}
 
-    pixel_t pret = { ret.r, ret.g, ret.b };
+    pixel_t pret = { SUP(ret.r, 255), SUP(ret.g, 255), SUP(ret.b, 255) };
 
     return pret;
 }
@@ -235,7 +236,10 @@ static void _preproc(hsvimg_t img)
     // normalize and partition
     for(i = 0; i < img.h; ++i) {
         for(j = 0; j < img.w; ++j) {
+            //printf("%f --- ", A(img, i, j).saturation);
+            //printf("%f --- ", A(img, i, j).value);
             A(img, i, j).value = (A(img, i, j).value - min) / max;
+            //printf("%f\n", A(img, i, j).value);
             if(_underThresh(A(img, i, j))) continue;
             partitions[PARTITION(A(img, i, j).hue)]++;
         }
@@ -299,20 +303,21 @@ static void _proc_bulk(void* data)
     for(j = 0; j < mydata->in.asHSV.w; ++j) {
         hsv_t p = A(mydata->in.asHSV, mydata->i, j);
         
-        A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
-        continue;
+        //A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
+        //continue;
         
         short dC1 = dist(p.hue, C1),
               dC2 = dist(p.hue, C2),
               dC3 = dist(p.hue, C3),
               dC4 = dist(p.hue, C4);
 
-        printf("%d %f %f\n", p.hue, p.saturation, p.value);
-        printf("%dx%d:: %d %d %d %d\n", mydata->i, j, dC1, dC2, dC3, dC4);
+        //printf("%d %f %f\n", p.hue, p.saturation, p.value);
+        //printf("%dx%d:: %d %d %d %d\n", mydata->i, j, dC1, dC2, dC3, dC4);
 
         if(_underThresh(p)) {
             p.saturation = 0.f;
         } else if(dC1 <= dC2 && dC1 <= dC3 && dC1 <= dC4) {
+//#define ALT_C1
 #ifdef ALT_C1
             // bad alternative
             p.hue = C1;
