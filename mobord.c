@@ -83,7 +83,6 @@ img_t mobord(img_t const img)
     img_t tmp = mosaic(img);
 
     jw_config_t conf = JW_CONFIG_INITIALIZER;
-    conf.numWorkers = 1;
 
     // process
     jw_init(conf);
