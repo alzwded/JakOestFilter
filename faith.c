@@ -323,7 +323,8 @@ static void _proc_bulk(void* data)
         } else /*dC3 or dC4 are min*/ {
             p.hue = 0;
             p.saturation = 0.f;
-            p.value = _redistribVal(p.value);
+            //p.value = _redistribVal(p.value);
+            p.value = _redistribVal(_redistribVal(p.value)); // favor white
         }
         
         A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
