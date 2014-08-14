@@ -16,6 +16,8 @@ extern img_t mosaic(img_t const);
 
 extern img_t mobord(img_t const);
 
+extern img_t faith(img_t const);
+
 img_t (*rec_fn)(img_t const) = NULL;
 
 /** generate the output file name */
@@ -116,6 +118,7 @@ void usage(char const* name)
     fprintf(stderr, "    filter may be: -1 (original)\n");
     fprintf(stderr, "                   -2 (mosaic)\n");
     fprintf(stderr, "                   -3 (mobord)\n");
+    fprintf(stderr, "                   -3 (faith)\n");
     exit(255);
 }
 
@@ -146,6 +149,9 @@ int main(int argc, char* argv[])
         break;
     case '3':
         rec_fn = mobord;
+        break;
+    case '4':
+        rec_fn = faith;
         break;
     default:
         usage(argv[0]);
