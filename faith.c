@@ -127,7 +127,7 @@ static inline pixel_t _fromHSV(hsv_t p)
 		return ret;
 	}
 
-	Hp = floor(p.hue / 60.f);
+	Hp = floorf(p.hue / 60.f);
 	f = (p.hue / 60.f) - Hp;
 	P = p.value * (1 - p.saturation);
 	Q = p.value * (1 - p.saturation * f);
@@ -271,6 +271,11 @@ static void _preproc(hsvimg_t img)
     }
 }
 
+static inline float _redistribVal(float p)
+{
+    return sinf(p * 3.14159f / 2.f);
+}
+
 static void _proc_bulk(void* data)
 {
     tdata_t* mydata = (tdata_t*)data;
@@ -294,6 +299,7 @@ static void _proc_bulk(void* data)
             p.saturation = p.saturation / 2.f + 0.5f;
         } else /*if(dC3 < dC1 && dC3 < dC2)*/ {
             p.saturation = 0.f;
+            p.value = _redistribVal(p.value);
         }
         
         A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
