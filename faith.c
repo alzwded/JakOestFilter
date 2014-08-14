@@ -52,7 +52,7 @@ static inline int _underThresh(hsv_t p)
 static inline hsv_t _toHSV(pixel_t p)
 {
     uint8_t M, m, C;
-    uint8_t Hp;
+    float Hp;
     hsv_t ret;
     enum {
         UNDEF,
@@ -96,16 +96,17 @@ static inline hsv_t _toHSV(pixel_t p)
 
     switch(state) {
     case MAXR:
-        Hp = ((p.g - p.b) / C) % 6;
+        Hp = (((float)p.g - p.b) / (float)C);
+        if(Hp > 6.f) Hp -= 6.f;
         break;
     case MAXG:
-        Hp = ((p.b - p.r) / C) + 2;
+        Hp = (((float)p.b - p.r) / (float)C) + 2;
         break;
     case MAXB:
-        Hp = ((p.r - p.g) / C) + 4;
+        Hp = (((float)p.r - p.g) / (float)C) + 4;
         break;
     default:
-        Hp = 0;
+        Hp = 0.f;
         break;
     }
 
@@ -120,9 +121,10 @@ static inline pixel_t _fromHSV(hsv_t p)
 {
     int Hp;
 	float f, P, Q, T;
-    pixel_t ret;
+    struct { float r, g, b; } ret;
 
-	if(p.saturation == 0) {
+	if(p.saturation < 1.e-5f) {
+        pixel_t ret;
         ret.r = ret.g = ret.b = p.value;
 		return ret;
 	}
@@ -134,42 +136,44 @@ static inline pixel_t _fromHSV(hsv_t p)
 	T = p.value * (1 - p.saturation * (1 - f));
 
 	switch(Hp) {
-		case 0:
-			ret.r = p.value;
-			ret.g = T;
-			ret.b = P;
-			break;
-		case 1:
-			ret.r = Q;
-			ret.g = p.value;
-			ret.b = P;
-			break;
-		case 2:
-			ret.r = P;
-			ret.g = p.value;
-			ret.b = T;
-			break;
-		case 3:
-			ret.r = P;
-			ret.g = Q;
-			ret.b = p.value;
-			break;
-		case 4:
-			ret.r = T;
-			ret.g = P;
-			ret.b = p.value;
-			break;
-		case 5:
-			ret.r = p.value;
-			ret.g = P;
-			ret.b = Q;
-			break;
-        default:
-            ret.r = ret.g = ret.b = 0;
-            break;
+	case 0:
+		ret.r = p.value;
+		ret.g = T;
+		ret.b = P;
+		break;
+	case 1:
+		ret.r = Q;
+		ret.g = p.value;
+		ret.b = P;
+		break;
+	case 2:
+		ret.r = P;
+		ret.g = p.value;
+		ret.b = T;
+		break;
+	case 3:
+		ret.r = P;
+		ret.g = Q;
+		ret.b = p.value;
+		break;
+	case 4:
+		ret.r = T;
+		ret.g = P;
+		ret.b = p.value;
+		break;
+	case 5:
+		ret.r = p.value;
+		ret.g = P;
+		ret.b = Q;
+		break;
+    default:
+        ret.r = ret.g = ret.b = 0;
+        break;
 	}
 
-    return ret;
+    pixel_t pret = { ret.r, ret.g, ret.b };
+
+    return pret;
 }
 
 typedef struct {
@@ -295,10 +299,16 @@ static void _proc_bulk(void* data)
     for(j = 0; j < mydata->in.asHSV.w; ++j) {
         hsv_t p = A(mydata->in.asHSV, mydata->i, j);
         
+        A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
+        continue;
+        
         short dC1 = dist(p.hue, C1),
               dC2 = dist(p.hue, C2),
               dC3 = dist(p.hue, C3),
               dC4 = dist(p.hue, C4);
+
+        printf("%d %f %f\n", p.hue, p.saturation, p.value);
+        printf("%dx%d:: %d %d %d %d\n", mydata->i, j, dC1, dC2, dC3, dC4);
 
         if(_underThresh(p)) {
             p.saturation = 0.f;
@@ -356,6 +366,7 @@ img_t faith(img_t const img)
     // normalize
     _preproc(hsvimg);
     // bulk processing
+    jw_init(conf);
     for(i = 0; i < img.h; ++i) {
         tdata_t* data = &datas[i];
         data->i = i;
