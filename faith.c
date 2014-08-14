@@ -294,7 +294,7 @@ static void _proc_bulk(void* data)
               dC2 = dist(p.hue, C2),
               dC3 = dist(p.hue, C3);
 
-        if(_underThresh) {
+        if(_underThresh(p)) {
             p.saturation = 0.f;
         } else if(dC1 < dC2 && dC1 < dC3) {
             p.hue = C1;
