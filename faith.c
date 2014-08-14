@@ -40,7 +40,7 @@ static struct {
     { 999.f, 0 },
 };
 
-static short C1, C2, C3;
+static short C1, C2, C3, C4;
 
 static inline int _underThresh(hsv_t p)
 {
@@ -257,7 +257,8 @@ static void _preproc(hsvimg_t img)
         }
     }
     //C2 = _partitionedHues[PARTITION(hh / n)];
-    C2 = hh / n;
+    if(n) C2 = hh / n;
+    else C2 = (C1 + 180) % 360;
 
     // determine 3rd point
     {
@@ -265,8 +266,18 @@ static void _preproc(hsvimg_t img)
         short p2 = ((int)C1 + 360 + C2) / 2 % 360;
         if(dist(p1, C1) < dist(p2, C1)) {
             C3 = p2;
+            if(dist(C1, C2) >= 30) {
+                C4 = p1;
+            } else {
+                C4 = C3;
+            }
         } else {
             C3 = p1;
+            if(dist(C1, C2) >= 30) {
+                C4 = p2;
+            } else {
+                C4 = C3;
+            }
         }
     }
 }
@@ -286,11 +297,12 @@ static void _proc_bulk(void* data)
         
         short dC1 = dist(p.hue, C1),
               dC2 = dist(p.hue, C2),
-              dC3 = dist(p.hue, C3);
+              dC3 = dist(p.hue, C3),
+              dC4 = dist(p.hue, C4);
 
         if(_underThresh(p)) {
             p.saturation = 0.f;
-        } else if(dC1 < dC2 && dC1 < dC3) {
+        } else if(dC1 <= dC2 && dC1 <= dC3 && dC1 <= dC4) {
 #ifdef ALT_C1
             // bad alternative
             p.hue = C1;
@@ -304,11 +316,11 @@ static void _proc_bulk(void* data)
             p.saturation = p.saturation TAILSAT;
             //p.value = _redistribVal(p.value);
 #endif
-        } else if(dC2 < dC1 && dC2 < dC3) {
+        } else if(dC2 <= dC1 && dC2 <= dC3 && dC2 <= dC4) {
             p.hue = C2;
             p.saturation = p.saturation / 2.f + 0.5f;
             p.value = _redistribVal(p.value);
-        } else /*if(dC3 < dC1 && dC3 < dC2)*/ {
+        } else /*dC3 or dC4 are min*/ {
             p.hue = 0;
             p.saturation = 0.f;
             p.value = _redistribVal(p.value);
