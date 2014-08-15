@@ -318,8 +318,7 @@ static void _proc_bulk(void* data)
         p.value = 0.2f * p.value + 0.8f *_redistribVal(p.value);
 
         p.saturation = _redistribVal(p.saturation);
-        p.saturation = _redistribVal(p.saturation);
-        //p.saturation = 0.5f * p.saturation + 0.5f * _redistribVal(p.saturation);
+        p.saturation = 0.2f * p.saturation + 0.8f * _redistribVal(p.saturation);
 
         A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
     }
