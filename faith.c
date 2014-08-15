@@ -18,8 +18,6 @@ typedef struct {
     hsv_t* pixels;
 } hsvimg_t;
 
-#define ABS(X) ((X < 0) ? (-X) : (X))
-
 static short _partitionedHues[] = {
     0,
     60,
@@ -72,10 +70,6 @@ static inline hsv_t _toHSV(pixel_t ip)
         } else {
             ret.hue = 60.f * ((r - g) / C + 4.f);
         }
-
-        //printf("warn");
-        //printf(" %d %d %d | ", ip.r, ip.g, ip.b);
-        //printf(" %d %f %f\n", ret.hue, ret.saturation, ret.value);
     }
 
     return ret;
@@ -196,27 +190,19 @@ static void _preproc(hsvimg_t img)
     // normalize and partition
     for(i = 0; i < img.h; ++i) {
         for(j = 0; j < img.w; ++j) {
-            //printf("%f --- ", A(img, i, j).saturation);
-            //printf("%f --- ", A(img, i, j).value);
             A(img, i, j).value = (A(img, i, j).value - min) / max;
             A(img, i, j).saturation = (A(img, i, j).saturation - mins) / maxs;
-            //printf("%f\n", A(img, i, j).value);
             if(_underThresh(A(img, i, j))) continue;
-            if(A(img, i, j).hue == 0.f) {
-                //printf("yes");
-                //printf("%d %f %f\n", A(img, i, j).hue, A(img, i, j).saturation, A(img, i, j).value);
-            }
             partitions[PARTITION(A(img, i, j).hue)]++;
         }
     }
 
-    printf("%d %d %d %d %d\n", partitions[0], partitions[1], partitions[2], partitions[3], partitions[4]);
+    //printf("%d %d %d %d %d\n", partitions[0], partitions[1], partitions[2], partitions[3], partitions[4]);
 
     // get dominant color
     j = 0;
     for(i = 0; i < 5; ++i) {
         if(partitions[i] > j) {
-            printf("rep at 1\n");
             j = partitions[i];
             C1 = _partitionedHues[i];
             C1partition = i;
@@ -224,27 +210,6 @@ static void _preproc(hsvimg_t img)
     }
 
     // get secondary color
-    for(i = 0; i < img.h; ++i) {
-        for(j = 0; j < img.w; ++j) {
-            if(PARTITION(A(img, i, j).hue) == C1partition) continue;
-            if(_underThresh(A(img, i, j))) continue;
-            hh += A(img, i, j).hue;
-            ++n;
-        }
-    }
-    //C2 = _partitionedHues[PARTITION(hh / n)];
-    if(n) C2 = hh / n;
-    else C2 = (C1 + 180) % 360;
-    //C2 = fmodf(C1 + 137.f, 360.f);
-    j = 0;
-    for(i = 0; i < 5; ++i) {
-        if(i == C1partition) continue;
-        if(partitions[i] > j) {
-            j = partitions[i];
-            C2 = _partitionedHues[i];
-        }
-    }
-
     if(partitions[(C1partition + 1) % 5] >= partitions[(C1partition + 4) % 5])
     {
         C2 = _partitionedHues[(C1partition + 1) % 5];
@@ -252,31 +217,20 @@ static void _preproc(hsvimg_t img)
         C2 = _partitionedHues[(C1partition + 4) % 5];
     }
 
-    // determine 3rd point
+    // determine 3rd and 4th points
     {
         short p1 = (C2 + C1) / 2;
         short p2 = (p1 + 180) % 360;
-        printf("%d vs. %d\n", dist(p1, C1), dist(p2, C1));
         if(abs(p1 - C1) < abs(p2 - C1)) {
             C3 = p2;
-            if(dist(C1, C2) >= 105) {
-                C4 = p1;
-            } else {
-                C4 = C3;
-                C4 = p1;
-            }
+            C4 = p1;
         } else {
             C3 = p1;
-            if(dist(C1, C2) >= 105) {
-                C4 = p2;
-            } else {
-                C4 = C3;
-                C4 = p2;
-            }
+            C4 = p2;
         }
     }
 
-    printf("color points: %d %d %d %d\n", C1, C2, C3, C4);
+    //printf("color points: %d %d %d %d\n", C1, C2, C3, C4);
 }
 
 static inline float _redistribVal(float p)
@@ -310,8 +264,6 @@ static inline float fixHue(float hue)
         }
     }
 
-    //mode = 2;
-
     if(dist(hue, C4) < dist(hue, C3)) {
         float t = (float)dist(hue, clor1) / (float)(dist(hue, clor1) + dist(hue, clor2));
         if(mode == 0) {
@@ -343,49 +295,29 @@ static void _proc_bulk(void* data)
     for(j = 0; j < mydata->in.asHSV.w; ++j) {
         hsv_t p = A(mydata->in.asHSV, mydata->i, j);
 
-        //printf("%d %f %f\n", p.hue, p.saturation, p.value);
-        
-        //A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
-        //pixel_t pp = A(mydata->out.asRGB, mydata->i, j);
-        ////printf("%d %d %d\n", pp.r, pp.g, pp.b);
-        //continue;
-        
         short dC1 = dist(p.hue, C1),
               dC2 = dist(p.hue, C2),
               dC3 = dist(p.hue, C3),
               dC4 = dist(p.hue, C4);
 
-        //printf("%d %d %d %d\n", C1, C2, C3, C4);
-        //printf("%dx%d:: %d %d %d %d\n", mydata->i, j, dC1, dC2, dC3, dC4);
-
         if(_underThresh(p)) {
-            //printf("underThresh");
             p.hue = 0.f;
             p.saturation = 0.f;
             p.value = _redistribVal(p.value);
             p.value = _redistribVal(p.value);
-            //p.value = _redistribVal(_redistribVal(p.value)); // favor white
-        } else if(dC4 < dC3) {//if(dC1 <= dC2 && dC1 <= dC3) {
-            // better alternative?
-            //p.hue = C1;
-            //printf("d4 min");
+        } else if(dC4 < dC3) {
             p.hue = fixHue(p.hue);
-            //p.saturation = _redistribVal(p.saturation);
-            //p.saturation = 1.f - _redistribVal(1.f - p.saturation);
             p.value = _redistribVal(p.value);
             p.value = _redistribVal(p.value);
-        } else if(dC4 < dC3) { //if(dC2 <= dC1 && dC2 <= dC3) {
-            //printf("d4 min");
+        } else /*dC3 min*/ {
             p.hue = fixHue(p.hue);
-            //p.saturation = _redistribVal(p.saturation);
-            p.value = _redistribVal(p.value);
-            p.value = 0;
-        } else /*dC3 or dC4 are min*/ {
-            //printf("d3 min");
-            p.hue = fixHue(p.hue);
-            //p.saturation = 1.f - _redistribVal(1.f - p.saturation);
             p.value = _redistribVal(p.value);
             p.value = _redistribVal(p.value);
+
+            // since it's outside of our color arc, desaturate it a bit
+            float t = (1.f - _redistribVal(1.f - p.saturation));
+            t = 1.f - _redistribVal(1.f - t);
+            p.saturation = (p.saturation + t) / 2.f;
         }
 
         A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
@@ -403,9 +335,9 @@ img_t faith(img_t const img)
     jw_config_t conf = JW_CONFIG_INITIALIZER;
 
     // process
-    jw_init(conf);
     // toHSV
     datas = (tdata_t*)malloc(img.h * sizeof(tdata_t));
+    jw_init(conf);
     for(i = 0; i < img.h; ++i) {
         tdata_t* data = &datas[i];
         data->i = i;
@@ -414,6 +346,7 @@ img_t faith(img_t const img)
         jw_add_job(&_proc_toHSV, data);
     }
     jw_main();
+
     // normalize
     _preproc(hsvimg);
     // bulk processing
