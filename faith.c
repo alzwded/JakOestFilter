@@ -175,7 +175,6 @@ static void _preproc(hsvimg_t img)
     size_t i, j;
     size_t partitions[5] = { 0, 0, 0, 0, 0 };
     size_t C1partition = 999;
-    int hh = 0, n = 0;
 
     // get normalization extents
     for(i = 0; i < img.h; ++i) {
@@ -210,7 +209,8 @@ static void _preproc(hsvimg_t img)
     }
 
     // get secondary color
-    if(partitions[(C1partition + 1) % 5] >= partitions[(C1partition + 4) % 5])
+    if(partitions[(C1partition + 1) % 5] + partitions[(C1partition + 2) % 5]
+            >= partitions[(C1partition + 4) % 5] + partitions[(C1partition + 3) % 5])
     {
         C2 = _partitionedHues[(C1partition + 1) % 5];
     } else {
@@ -303,22 +303,22 @@ static void _proc_bulk(void* data)
         if(_underThresh(p)) {
             p.hue = 0.f;
             p.saturation = 0.f;
-            p.value = _redistribVal(p.value);
-            p.value = _redistribVal(p.value);
         } else if(dC4 < dC3) {
             p.hue = fixHue(p.hue);
-            p.value = _redistribVal(p.value);
-            p.value = _redistribVal(p.value);
         } else /*dC3 min*/ {
             p.hue = fixHue(p.hue);
-            p.value = _redistribVal(p.value);
-            p.value = _redistribVal(p.value);
 
             // since it's outside of our color arc, desaturate it a bit
             float t = (1.f - _redistribVal(1.f - p.saturation));
             t = 1.f - _redistribVal(1.f - t);
             p.saturation = (p.saturation + t) / 2.f;
         }
+
+        p.value = _redistribVal(p.value);
+        p.value = 0.3f * p.value + 0.7f *_redistribVal(p.value);
+
+        p.saturation = _redistribVal(p.saturation);
+        p.saturation = 0.5f * p.saturation + 0.5f * _redistribVal(p.saturation);
 
         A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
     }
