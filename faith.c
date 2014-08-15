@@ -245,6 +245,13 @@ static void _preproc(hsvimg_t img)
         }
     }
 
+    if(partitions[(C1partition + 1) % 5] >= partitions[(C1partition + 4) % 5])
+    {
+        C2 = _partitionedHues[(C1partition + 1) % 5];
+    } else {
+        C2 = _partitionedHues[(C1partition + 4) % 5];
+    }
+
     // determine 3rd point
     {
         short p1 = (C2 + C1) / 2;
@@ -279,31 +286,50 @@ static inline float _redistribVal(float p)
 
 static inline float fixHue(float hue)
 {
+    int mode = 0;
     float clor1, clor2;
     if(abs(clor2 - clor1) == dist(clor1, clor2)) {
         if(C2 > C1) {
+            mode = 1;
             clor1 = C1;
             clor2 = C2;
         } else {
+            mode = 0;
             clor1 = C2;
             clor2 = C1;
         }
     } else {
-        if(clor2 > clor1) {
+        if(C2 > C1) {
             clor1 = C1 + 360.f;
             clor2 = C2;
+            mode = 1;
         } else {
+            mode = 0;
             clor1 = C2 + 360.f;
             clor2 = C1;
         }
     }
 
+    //mode = 2;
+
     if(dist(hue, C4) < dist(hue, C3)) {
-        hue = clor1 + (float)dist(hue, clor1) / (float)(dist(hue, clor1) + dist(hue, clor2)) * (float)dist(clor1, clor2);
+        float t = (float)dist(hue, clor1) / (float)(dist(hue, clor1) + dist(hue, clor2));
+        if(mode == 0) {
+            t = _redistribVal(t);
+        } else if(mode == 1) {
+            t = 1.f - _redistribVal(t);
+        }
+        hue = clor1 + t * (float)dist(clor1, clor2);
     } else {
         hue = fmodf((hue + 180.f), 360);
-        //hue = (1.f - (hue / (float)dist(clor1, clor2))) * (float)dist(clor1, clor2);
-        hue = clor1 + (float)dist(hue, clor1) / (float)(dist(hue, clor1) + dist(hue, clor2)) * (float)dist(clor1, clor2);
+        float t = (float)dist(hue, clor1) / (float)(dist(hue, clor1) + dist(hue, clor2));
+        t = 1.f - t;
+        if(mode == 0) {
+            t = _redistribVal(t);
+        } else if(mode == 1) {
+            t = 1.f - _redistribVal(t);
+        }
+        hue = clor1 + t * (float)dist(clor1, clor2);
     }
 
     return fmodf(hue, 360.f);
@@ -333,28 +359,39 @@ static void _proc_bulk(void* data)
         //printf("%dx%d:: %d %d %d %d\n", mydata->i, j, dC1, dC2, dC3, dC4);
 
         if(_underThresh(p)) {
+            //printf("underThresh");
+            p.hue = 0.f;
             p.saturation = 0.f;
             p.value = _redistribVal(p.value);
+            p.value = _redistribVal(p.value);
             //p.value = _redistribVal(_redistribVal(p.value)); // favor white
-        } else if(dC1 <= dC2 && dC1 <= dC3) {
+        } else if(dC4 < dC3) {//if(dC1 <= dC2 && dC1 <= dC3) {
             // better alternative?
-            p.hue = C1;
-            p.saturation = 1.f - _redistribVal(1.f - p.saturation);
-            p.value = _redistribVal(p.value);
-        } else if(dC2 <= dC1 && dC2 <= dC3) {
+            //p.hue = C1;
+            //printf("d4 min");
             p.hue = fixHue(p.hue);
-            p.saturation = 1.f - _redistribVal(1.f - p.saturation);
             //p.saturation = _redistribVal(p.saturation);
-            p.value = _redistribVal(p.value);
-            //p.saturation *= p.saturation;
-            //p.value = _redistribVal(_redistribVal(p.value)); // favor white
-        } else /*dC3 or dC4 are min*/ {
-            p.hue = fixHue(p.hue);
             p.saturation = 1.f - _redistribVal(1.f - p.saturation);
             p.value = _redistribVal(p.value);
-            //p.value = _redistribVal(_redistribVal(p.value)); // favor white
+            p.value = _redistribVal(p.value);
+        } else if(dC4 < dC3) { //if(dC2 <= dC1 && dC2 <= dC3) {
+            //printf("d4 min");
+            p.hue = fixHue(p.hue);
+            p.saturation = _redistribVal(p.saturation);
+            p.value = _redistribVal(p.value);
+            p.value = 0;
+        } else /*dC3 or dC4 are min*/ {
+            //printf("d3 min");
+            p.hue = fixHue(p.hue);
+            //p.saturation = 1.f - _redistribVal(1.f - p.saturation);
+            //p.saturation = 1.f - _redistribVal(1.f - p.saturation);
+            //p.saturation = 0.f;//_redistribVal(p.saturation);
+            //p.saturation = _redistribVal(p.saturation);
+            p.saturation = 1.f - _redistribVal(1.f - p.saturation);
+            p.value = _redistribVal(p.value);
+            p.value = _redistribVal(p.value);
         }
-        
+
         A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
     }
 }
