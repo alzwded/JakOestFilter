@@ -1,7 +1,7 @@
 JakOestFilter
 =============
 
-Photo filter applied to my 2013-14 Austrian Holiday photos
+Photo filter first developed to be applied to my 2013-14 Austrian Holiday photos
 
 This project lives on http://github.com/alzwded/JakOestFilter/
 
@@ -13,6 +13,7 @@ How it works
 ============
 
 It applies the following transformations:
+
 1. it grabs the central square
 1. it downsamples the photo to 800x800
 1. it applies some recolouring rules which amplifies the relative differences between the red, green and blue components (makes warm colours more proeminent)
@@ -33,13 +34,22 @@ Usage
 =====
 
 ```sh
-jakoest file1.jpg file2.jpg ...
+jakoest <filter> file1.jpg file2.jpg ...
+filters:    -1  original
+            -2  mosaic
+            -3  mobord
+            -4  faith
 ```
 
 The output files will be named `file1.out.jpg`, `file2.out.jpg` etc.
 
 Changelog
 =========
+
+v1.3.2
+------
+
+Added a filter than renders the photo in a bichrome color space and dodges the photo a lot.
 
 v1.3.1
 ------
