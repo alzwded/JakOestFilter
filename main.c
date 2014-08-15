@@ -118,7 +118,7 @@ void usage(char const* name)
     fprintf(stderr, "    filter may be: -1 (original)\n");
     fprintf(stderr, "                   -2 (mosaic)\n");
     fprintf(stderr, "                   -3 (mobord)\n");
-    fprintf(stderr, "                   -3 (faith)\n");
+    fprintf(stderr, "                   -4 (faith)\n");
     exit(255);
 }
 

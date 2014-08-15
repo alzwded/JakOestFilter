@@ -18,7 +18,7 @@ typedef struct {
     hsv_t* pixels;
 } hsvimg_t;
 
-#define ABS(X) ((X < 0) ? -X : X)
+#define ABS(X) ((X < 0) ? (-X) : (X))
 
 static short _partitionedHues[] = {
     0,
@@ -49,132 +49,89 @@ static inline int _underThresh(hsv_t p)
     return 0;
 }
 
-static inline hsv_t _toHSV(pixel_t p)
+#define MAX(A, B, C) ((A >= B && A >= C) ? A : (B >= A && B >= C) ? B : C)
+#define MIN(A, B, C) ((A <= B && A <= C) ? A : (B <= A && B <= C) ? B : C)
+
+static inline hsv_t _toHSV(pixel_t ip)
 {
-    uint8_t M, m, C;
-    float Hp;
     hsv_t ret;
-    enum {
-        UNDEF,
-        MAXR,
-        MAXB,
-        MAXG
-    } state;
+    float r = (float)ip.r / 255.f, g = (float)ip.g / 255.f, b = (float)ip.b / 255.f;
+    float max = MAX(r, g, b);
+    float min = MIN(r, g, b);
+    ret.value = (max + min) / 2.f;
 
-    if(p.r > p.g && p.b > p.g) {
-        m = p.g;
-        if(p.r > p.b) {
-            M = p.r;
-            state = MAXR;
+    if(max == min){
+        ret.hue = ret.saturation = 0.f; // achromatic
+    }else{
+        float C = max - min;
+        ret.saturation = C / (1.f - fabs(2.f * ret.value - 1.f));
+        if(max == r) {
+            ret.hue = 60.f * fmodf((g - b) / C, 6.f);
+        } else if(max == g) {
+            ret.hue = 60.f * ((b - r) / C + 2.f);
         } else {
-            M = p.b;
-            state = MAXB;
+            ret.hue = 60.f * ((r - g) / C + 4.f);
         }
-    } else if(p.r > p.b && p.g > p.b) {
-        m = p.b;
-        if(p.r > p.g) {
-            M = p.r;
-            state = MAXR;
-        } else {
-            M = p.g;
-            state = MAXG;
-        }
-    } else if(p.b > p.r && p.g > p.r) {
-        m = p.r;
-        if(p.b > p.g) {
-            M = p.b;
-            state = MAXB;
-        } else {
-            M = p.g;
-            state = MAXG;
-        }
-    }
 
-    if((C = M - m) == 0) {
-        state = UNDEF;
+        //printf("warn");
+        //printf(" %d %d %d | ", ip.r, ip.g, ip.b);
+        //printf(" %d %f %f\n", ret.hue, ret.saturation, ret.value);
     }
-
-    switch(state) {
-    case MAXR:
-        Hp = (((float)p.g - p.b) / (float)C);
-        if(Hp > 6.f) Hp -= 6.f;
-        break;
-    case MAXG:
-        Hp = (((float)p.b - p.r) / (float)C) + 2;
-        break;
-    case MAXB:
-        Hp = (((float)p.r - p.g) / (float)C) + 4;
-        break;
-    default:
-        Hp = 0.f;
-        break;
-    }
-
-    ret.hue = SUP(60.f * Hp, 360.f);
-    ret.saturation = (M == 0) ? 0.f : ((float)C / M);
-    ret.value = M / 255.f;
 
     return ret;
 }
 
 static inline pixel_t _fromHSV(hsv_t p)
 {
-    int Hp;
-	float f, P, Q, T;
     struct { float r, g, b; } ret;
 
-	if(p.saturation < 1.e-5f) {
-        pixel_t ret;
-        ret.r = ret.g = ret.b = SUP(p.value * 255.f, 255);
-		return ret;
-	}
+    if(p.saturation == 0.f) {
+        pixel_t ret = { p.value * 255.f, p.value * 255.f, p.value * 255.f };
+        return ret;
+    }
 
-	Hp = floorf(p.hue / 60.f);
-	f = (p.hue / 60.f) - Hp;
-    p.value *= 255.f;
-	P = p.value * (1 - p.saturation);
-	Q = p.value * (1 - p.saturation * f);
-	T = p.value * (1 - p.saturation * (1 - f));
+    float C = (1.f - fabsf(2.f * p.value - 1.f)) * p.saturation;
+    float X = C * (1.f - fabsf(fmodf(p.hue / 60.f, 2.f) - 1.f));
+    float m = 1.f * (p.value - 0.5f * C);
 
-	switch(Hp) {
-	case 0:
-		ret.r = p.value;
-		ret.g = T;
-		ret.b = P;
-		break;
-	case 1:
-		ret.r = Q;
-		ret.g = p.value;
-		ret.b = P;
-		break;
-	case 2:
-		ret.r = P;
-		ret.g = p.value;
-		ret.b = T;
-		break;
-	case 3:
-		ret.r = P;
-		ret.g = Q;
-		ret.b = p.value;
-		break;
-	case 4:
-		ret.r = T;
-		ret.g = P;
-		ret.b = p.value;
-		break;
-	case 5:
-		ret.r = p.value;
-		ret.g = P;
-		ret.b = Q;
-		break;
-    default:
-        ret.r = ret.g = ret.b = 0;
-        break;
-	}
+    if(p.hue < 0.f) {
+        ret.r = ret.g = ret.b = m;
+    } else if(p.hue < 60.f) {
+        ret.r = C + m;
+        ret.g = X + m;
+        ret.b = m;
+    } else if(p.hue < 120.f) {
+        ret.r = X + m;
+        ret.g = C + m;
+        ret.b = m;
+    } else if(p.hue < 180.f) {
+        ret.r = m;
+        ret.g = C + m;
+        ret.b = X + m;
+    } else if(p.hue < 240.f) {
+        ret.r = m;
+        ret.g = X + m;
+        ret.b = C + m;
+    } else if(p.hue < 300.f) {
+        ret.r = X + m;
+        ret.g = m;
+        ret.b = C + m;
+    } else if(p.hue < 360.f) {
+        ret.r = C + m;
+        ret.g = m;
+        ret.b = X + m;
+    } else {
+        ret.r = ret.g = ret.b = m;
+    }
 
-    pixel_t pret = { SUP(ret.r, 255), SUP(ret.g, 255), SUP(ret.b, 255) };
 
-    return pret;
+    pixel_t realRet = {
+        ret.r * 255.f,
+        ret.g * 255.f,
+        ret.b * 255.f
+    };
+
+    return realRet;
 }
 
 typedef struct {
@@ -212,7 +169,7 @@ static inline size_t PARTITION(float X)
 
 static inline short dist(short p1, short p2)
 {
-    short r1 = ABS(p1 - p2);
+    short r1 = abs(p1 - p2);
     short r2 = (r1 + 180) % 360;
     return (r1 < r2) ? r1 : r2;
 }
@@ -220,6 +177,7 @@ static inline short dist(short p1, short p2)
 static void _preproc(hsvimg_t img)
 {
     float min = 1.f, max = 0.f;
+    float mins = 1.f, maxs = 0.f;
     size_t i, j;
     size_t partitions[5] = { 0, 0, 0, 0, 0 };
     size_t C1partition = 999;
@@ -230,6 +188,8 @@ static void _preproc(hsvimg_t img)
         for(j = 0; j < img.w; ++j) {
             if(A(img, i, j).value < min) min = A(img, i, j).value;
             if(A(img, i, j).value > max) max = A(img, i, j).value;
+            if(A(img, i, j).saturation < mins) mins = A(img, i, j).saturation;
+            if(A(img, i, j).saturation > maxs) maxs = A(img, i, j).saturation;
         }
     }
 
@@ -239,16 +199,24 @@ static void _preproc(hsvimg_t img)
             //printf("%f --- ", A(img, i, j).saturation);
             //printf("%f --- ", A(img, i, j).value);
             A(img, i, j).value = (A(img, i, j).value - min) / max;
+            A(img, i, j).saturation = (A(img, i, j).saturation - mins) / maxs;
             //printf("%f\n", A(img, i, j).value);
             if(_underThresh(A(img, i, j))) continue;
+            if(A(img, i, j).hue == 0.f) {
+                //printf("yes");
+                //printf("%d %f %f\n", A(img, i, j).hue, A(img, i, j).saturation, A(img, i, j).value);
+            }
             partitions[PARTITION(A(img, i, j).hue)]++;
         }
     }
 
+    printf("%d %d %d %d %d\n", partitions[0], partitions[1], partitions[2], partitions[3], partitions[4]);
+
     // get dominant color
-    j = -1;
+    j = 0;
     for(i = 0; i < 5; ++i) {
         if(partitions[i] > j) {
+            printf("rep at 1\n");
             j = partitions[i];
             C1 = _partitionedHues[i];
             C1partition = i;
@@ -267,32 +235,78 @@ static void _preproc(hsvimg_t img)
     //C2 = _partitionedHues[PARTITION(hh / n)];
     if(n) C2 = hh / n;
     else C2 = (C1 + 180) % 360;
+    //C2 = fmodf(C1 + 137.f, 360.f);
+    j = 0;
+    for(i = 0; i < 5; ++i) {
+        if(i == C1partition) continue;
+        if(partitions[i] > j) {
+            j = partitions[i];
+            C2 = _partitionedHues[i];
+        }
+    }
 
     // determine 3rd point
     {
         short p1 = (C2 + C1) / 2;
-        short p2 = ((int)C1 + 360 + C2) / 2 % 360;
-        if(dist(p1, C1) < dist(p2, C1)) {
+        short p2 = (p1 + 180) % 360;
+        printf("%d vs. %d\n", dist(p1, C1), dist(p2, C1));
+        if(abs(p1 - C1) < abs(p2 - C1)) {
             C3 = p2;
-            if(dist(C1, C2) >= 30) {
+            if(dist(C1, C2) >= 105) {
                 C4 = p1;
             } else {
                 C4 = C3;
+                C4 = p1;
             }
         } else {
             C3 = p1;
-            if(dist(C1, C2) >= 30) {
+            if(dist(C1, C2) >= 105) {
                 C4 = p2;
             } else {
                 C4 = C3;
+                C4 = p2;
             }
         }
     }
+
+    printf("color points: %d %d %d %d\n", C1, C2, C3, C4);
 }
 
 static inline float _redistribVal(float p)
 {
     return sinf(p * 3.14159f / 2.f);
+}
+
+static inline float fixHue(float hue)
+{
+    float clor1, clor2;
+    if(abs(clor2 - clor1) == dist(clor1, clor2)) {
+        if(C2 > C1) {
+            clor1 = C1;
+            clor2 = C2;
+        } else {
+            clor1 = C2;
+            clor2 = C1;
+        }
+    } else {
+        if(clor2 > clor1) {
+            clor1 = C1 + 360.f;
+            clor2 = C2;
+        } else {
+            clor1 = C2 + 360.f;
+            clor2 = C1;
+        }
+    }
+
+    if(dist(hue, C4) < dist(hue, C3)) {
+        hue = clor1 + (float)dist(hue, clor1) / (float)(dist(hue, clor1) + dist(hue, clor2)) * (float)dist(clor1, clor2);
+    } else {
+        hue = fmodf((hue + 180.f), 360);
+        //hue = (1.f - (hue / (float)dist(clor1, clor2))) * (float)dist(clor1, clor2);
+        hue = clor1 + (float)dist(hue, clor1) / (float)(dist(hue, clor1) + dist(hue, clor2)) * (float)dist(clor1, clor2);
+    }
+
+    return fmodf(hue, 360.f);
 }
 
 static void _proc_bulk(void* data)
@@ -302,8 +316,12 @@ static void _proc_bulk(void* data)
 
     for(j = 0; j < mydata->in.asHSV.w; ++j) {
         hsv_t p = A(mydata->in.asHSV, mydata->i, j);
+
+        //printf("%d %f %f\n", p.hue, p.saturation, p.value);
         
         //A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
+        //pixel_t pp = A(mydata->out.asRGB, mydata->i, j);
+        ////printf("%d %d %d\n", pp.r, pp.g, pp.b);
         //continue;
         
         short dC1 = dist(p.hue, C1),
@@ -311,35 +329,30 @@ static void _proc_bulk(void* data)
               dC3 = dist(p.hue, C3),
               dC4 = dist(p.hue, C4);
 
-        //printf("%d %f %f\n", p.hue, p.saturation, p.value);
+        //printf("%d %d %d %d\n", C1, C2, C3, C4);
         //printf("%dx%d:: %d %d %d %d\n", mydata->i, j, dC1, dC2, dC3, dC4);
 
         if(_underThresh(p)) {
             p.saturation = 0.f;
-        } else if(dC1 <= dC2 && dC1 <= dC3 && dC1 <= dC4) {
-//#define ALT_C1
-#ifdef ALT_C1
-            // bad alternative
-            p.hue = C1;
-            p.value = 0.5f;
-            p.saturation = p.saturation / 2.f + 0.5f;
-#else
+            p.value = _redistribVal(p.value);
+            //p.value = _redistribVal(_redistribVal(p.value)); // favor white
+        } else if(dC1 <= dC2 && dC1 <= dC3) {
             // better alternative?
             p.hue = C1;
-            # define SATAMOUNT 8.f
-            # define TAILSAT / SATAMOUNT + (SATAMOUNT - 1.f) / SATAMOUNT;
-            p.saturation = p.saturation TAILSAT;
-            //p.value = _redistribVal(p.value);
-#endif
-        } else if(dC2 <= dC1 && dC2 <= dC3 && dC2 <= dC4) {
-            p.hue = C2;
-            p.saturation = p.saturation / 2.f + 0.5f;
+            p.saturation = 1.f - _redistribVal(1.f - p.saturation);
             p.value = _redistribVal(p.value);
+        } else if(dC2 <= dC1 && dC2 <= dC3) {
+            p.hue = fixHue(p.hue);
+            p.saturation = 1.f - _redistribVal(1.f - p.saturation);
+            //p.saturation = _redistribVal(p.saturation);
+            p.value = _redistribVal(p.value);
+            //p.saturation *= p.saturation;
+            //p.value = _redistribVal(_redistribVal(p.value)); // favor white
         } else /*dC3 or dC4 are min*/ {
-            p.hue = 0;
-            p.saturation = 0.f;
-            //p.value = _redistribVal(p.value);
-            p.value = _redistribVal(_redistribVal(p.value)); // favor white
+            p.hue = fixHue(p.hue);
+            p.saturation = 1.f - _redistribVal(1.f - p.saturation);
+            p.value = _redistribVal(p.value);
+            //p.value = _redistribVal(_redistribVal(p.value)); // favor white
         }
         
         A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
