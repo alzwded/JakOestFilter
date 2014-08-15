@@ -371,23 +371,19 @@ static void _proc_bulk(void* data)
             //printf("d4 min");
             p.hue = fixHue(p.hue);
             //p.saturation = _redistribVal(p.saturation);
-            p.saturation = 1.f - _redistribVal(1.f - p.saturation);
+            //p.saturation = 1.f - _redistribVal(1.f - p.saturation);
             p.value = _redistribVal(p.value);
             p.value = _redistribVal(p.value);
         } else if(dC4 < dC3) { //if(dC2 <= dC1 && dC2 <= dC3) {
             //printf("d4 min");
             p.hue = fixHue(p.hue);
-            p.saturation = _redistribVal(p.saturation);
+            //p.saturation = _redistribVal(p.saturation);
             p.value = _redistribVal(p.value);
             p.value = 0;
         } else /*dC3 or dC4 are min*/ {
             //printf("d3 min");
             p.hue = fixHue(p.hue);
             //p.saturation = 1.f - _redistribVal(1.f - p.saturation);
-            //p.saturation = 1.f - _redistribVal(1.f - p.saturation);
-            //p.saturation = 0.f;//_redistribVal(p.saturation);
-            //p.saturation = _redistribVal(p.saturation);
-            p.saturation = 1.f - _redistribVal(1.f - p.saturation);
             p.value = _redistribVal(p.value);
             p.value = _redistribVal(p.value);
         }
