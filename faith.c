@@ -190,7 +190,7 @@ static void _preproc(hsvimg_t img)
     for(i = 0; i < img.h; ++i) {
         for(j = 0; j < img.w; ++j) {
             A(img, i, j).value = (A(img, i, j).value - min) / max;
-            A(img, i, j).saturation = (A(img, i, j).saturation - mins) / maxs;
+            //A(img, i, j).saturation = (A(img, i, j).saturation - mins) / maxs;
             if(_underThresh(A(img, i, j))) continue;
             partitions[PARTITION(A(img, i, j).hue)]++;
         }
@@ -315,10 +315,11 @@ static void _proc_bulk(void* data)
         }
 
         p.value = _redistribVal(p.value);
-        p.value = 0.3f * p.value + 0.7f *_redistribVal(p.value);
+        p.value = 0.2f * p.value + 0.8f *_redistribVal(p.value);
 
         p.saturation = _redistribVal(p.saturation);
-        p.saturation = 0.5f * p.saturation + 0.5f * _redistribVal(p.saturation);
+        p.saturation = _redistribVal(p.saturation);
+        //p.saturation = 0.5f * p.saturation + 0.5f * _redistribVal(p.saturation);
 
         A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
     }
