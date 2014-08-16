@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 #include "common.h"
 #include "JakWorkers.h"
 
@@ -35,9 +36,7 @@ static inline void _modif(pixel_t* p, img_t const img, float vh, float vw, size_
             float dist = abs( y * y + x * x ) / (vv * vv);
             float skew = 0.0;
 
-            //dist = dist * dist * dist * dist;
             dist = dist * dist;
-
             skew = SKEW(dist);
 
             r += skew * A(img, ii, jj).r;
@@ -67,7 +66,6 @@ static void tDS(void* data)
     for(j = 0; j < mydata->retw; ++j) {
         _modif(&A((*(mydata->ret)), mydata->i, j), mydata->img, mydata->vh, mydata->vw, mydata->i, j);
     }
-    free(mydata);
 }
 
 /** downsample a picture to 800x800 */
@@ -81,12 +79,22 @@ img_t downSample800(img_t const img)
     float vh = (float)img.h / ret.h;
 
     jw_config_t conf = JW_CONFIG_INITIALIZER;
+
+    if(img.w < 800 || img.h < 800) {
+        memcpy(ret.pixels, img.pixels, sizeof(pixel_t) * img.w * img.h);
+        ret.w = img.w;
+        ret.h = img.h;
+        return ret;
+    }
+
     jw_init(conf);
 
     assert(img.w >= 800 && img.h >= 800);
 
+    tdata_t* datas = (tdata_t*)malloc(sizeof(tdata_t) * ret.h);
+
     for(i = 0; i < ret.h; ++i) {
-        tdata_t* data = (tdata_t*)malloc(sizeof(tdata_t));
+        tdata_t* data = &datas[i];
         data->ret = &ret;
         data->img = img;
         data->vh = vh;
@@ -96,6 +104,8 @@ img_t downSample800(img_t const img)
         jw_add_job(&tDS, data);
     }
     jw_main();
+
+    free(datas);
 
     return ret;
 }
