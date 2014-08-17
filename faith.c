@@ -171,7 +171,7 @@ static inline short dist(short p1, short p2)
         p2 = t;
     }
     short r1 = abs(p2 - p1);
-    short r2 = abs(p2 + 360 - p1);
+    short r2 = abs(p1 + 360 - p2);
     return (r1 < r2) ? r1 : r2;
 }
 
@@ -240,7 +240,7 @@ static void _preproc(hsvimg_t img)
     {
         short p1 = (C2 + C1) / 2;
         short p2 = (p1 + 180) % 360;
-        if(abs(p1 - C1) < abs(p2 - C1)) {
+        if(dist(p1, C1) < dist(p2, C1)) {
             C3 = p2;
             C4 = p1;
         } else {
@@ -260,26 +260,26 @@ static inline float _redistribVal(float p)
 static inline float fixHue(float hue)
 {
     int mode = 0;
-    float clor1, clor2;
+    float clor1 = C1, clor2 = C2;
     if(abs(clor2 - clor1) == dist(clor1, clor2)) {
         if(C2 > C1) {
-            mode = 1;
+            mode = 0;
             clor1 = C1;
             clor2 = C2;
         } else {
-            mode = 0;
+            mode = 1;
             clor1 = C2;
             clor2 = C1;
         }
     } else {
         if(C2 > C1) {
-            clor1 = C1 + 360.f;
-            clor2 = C2;
-            mode = 1;
-        } else {
+            clor1 = C2;
+            clor2 = C1 + 360.f;
             mode = 0;
-            clor1 = C2 + 360.f;
-            clor2 = C1;
+        } else {
+            clor1 = C1;
+            clor2 = C2 + 360.f;
+            mode = 1;
         }
     }
 
@@ -288,7 +288,7 @@ static inline float fixHue(float hue)
         if(mode == 0) {
             t = _redistribVal(t);
         } else if(mode == 1) {
-            t = 1.f - _redistribVal(t);
+            t = 1.f - _redistribVal(1.f - t);
         }
         hue = clor1 + t * (float)dist(clor1, clor2);
     } else {
@@ -298,7 +298,7 @@ static inline float fixHue(float hue)
         if(mode == 0) {
             t = _redistribVal(t);
         } else if(mode == 1) {
-            t = 1.f - _redistribVal(t);
+            t = 1.f - _redistribVal(1.f - t);
         }
         hue = clor1 + t * (float)dist(clor1, clor2);
     }
@@ -335,15 +335,16 @@ static void _proc_bulk(void* data)
             // since it's outside of our color arc, desaturate it a bit
             float t = (1.f - _redistribVal(1.f - p.saturation));
             t = 1.f - _redistribVal(1.f - t);
-            p.saturation = (0.3f * p.saturation + 0.7f * t);
+            t = 1.f - _redistribVal(1.f - t);
+            p.saturation = t;//(0.3f * p.saturation + 0.7f * t);
 
             p.value = _redistribVal(p.value);
-            p.value = 0.25f * p.value + 0.75f *_redistribVal(p.value);
+            p.value = 0.4 * p.value + 0.6 *_redistribVal(p.value);
         } else /*if(dC4 < dC3)*/ {
             p.hue = fixHue(p.hue);
 
             p.saturation = _redistribVal(p.saturation);
-            p.saturation = 0.3f * p.saturation + 0.7f * _redistribVal(p.saturation);
+            //p.saturation = 0.6f * p.saturation + 0.4f * _redistribVal(p.saturation);
 
             p.value = _redistribVal(p.value);
             p.value = 0.2f * p.value + 0.8f *_redistribVal(p.value);
