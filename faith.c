@@ -7,6 +7,7 @@
 
 #define SATTHRESH (0.1f)
 #define VALTHRESH (0.05f)
+#define VALSUPTHRESH (0.87f)
 
 typedef struct {
     short hue;
@@ -44,6 +45,7 @@ static inline int _underThresh(hsv_t p)
 {
     if(p.saturation < SATTHRESH) return 1;
     if(p.value < VALTHRESH) return 1;
+    if(p.value > VALSUPTHRESH) return 1;
     return 0;
 }
 
@@ -163,9 +165,26 @@ static inline size_t PARTITION(float X)
 
 static inline short dist(short p1, short p2)
 {
-    short r1 = abs(p1 - p2);
-    short r2 = (r1 + 180) % 360;
+    if(p1 > p2) {
+        short t = p1;
+        p1 = p2;
+        p2 = t;
+    }
+    short r1 = abs(p2 - p1);
+    short r2 = abs(p2 + 360 - p1);
     return (r1 < r2) ? r1 : r2;
+}
+
+static inline void _incPartition(double* val, hsv_t p)
+{
+    if(p.value < 0.5) {
+        *val += sqrt((double)p.saturation * sin(p.value * 3.14159));
+    } else {
+        double b = p.value;
+        b = 4.0 * (b * b - 2.0 * b + 1.0);
+        b *= b;
+        *val += sqrt((double)p.saturation * b);
+    }
 }
 
 static void _preproc(hsvimg_t img)
@@ -192,17 +211,16 @@ static void _preproc(hsvimg_t img)
             A(img, i, j).value = (A(img, i, j).value - min) / max;
             //A(img, i, j).saturation = (A(img, i, j).saturation - mins) / maxs;
             if(_underThresh(A(img, i, j))) continue;
-            partitions[PARTITION(A(img, i, j).hue)] += A(img, i, j).saturation;
+            _incPartition(&partitions[PARTITION(A(img, i, j).hue)], A(img, i, j));
         }
     }
 
-    //printf("%d %d %d %d %d\n", partitions[0], partitions[1], partitions[2], partitions[3], partitions[4]);
+    printf("partitions: R:%.3f Y:%.3f G:%.3f b:%.3f B:%.3f\n", partitions[0], partitions[1], partitions[2], partitions[3], partitions[4]);
 
     // get dominant color
-    j = 0;
     double k =-1.0;
     for(i = 0; i < 5; ++i) {
-        if(partitions[i] > j) {
+        if(partitions[i] > k) {
             k = partitions[i];
             C1 = _partitionedHues[i];
             C1partition = i;
@@ -231,7 +249,7 @@ static void _preproc(hsvimg_t img)
         }
     }
 
-    //printf("color points: %d %d %d %d\n", C1, C2, C3, C4);
+    printf("color points: %d %d %d %d\n", C1, C2, C3, C4);
 }
 
 static inline float _redistribVal(float p)
@@ -300,26 +318,36 @@ static void _proc_bulk(void* data)
               dC2 = dist(p.hue, C2),
               dC3 = dist(p.hue, C3),
               dC4 = dist(p.hue, C4);
-
+#if 0
         if(_underThresh(p)) {
             p.hue = 0.f;
             p.saturation = 0.f;
-        } else if(dC4 < dC3) {
-            p.hue = fixHue(p.hue);
-        } else /*dC3 min*/ {
+
+            p.value = _redistribVal(p.value);
+            p.value = _redistribVal(p.value);
+        }
+#endif
+
+
+        if(dC3 < dC4) {
             p.hue = fixHue(p.hue);
 
             // since it's outside of our color arc, desaturate it a bit
             float t = (1.f - _redistribVal(1.f - p.saturation));
             t = 1.f - _redistribVal(1.f - t);
-            p.saturation = (p.saturation + t) / 2.f;
+            p.saturation = (0.3f * p.saturation + 0.7f * t);
+
+            p.value = _redistribVal(p.value);
+            p.value = 0.25f * p.value + 0.75f *_redistribVal(p.value);
+        } else /*if(dC4 < dC3)*/ {
+            p.hue = fixHue(p.hue);
+
+            p.saturation = _redistribVal(p.saturation);
+            p.saturation = 0.3f * p.saturation + 0.7f * _redistribVal(p.saturation);
+
+            p.value = _redistribVal(p.value);
+            p.value = 0.2f * p.value + 0.8f *_redistribVal(p.value);
         }
-
-        p.value = _redistribVal(p.value);
-        p.value = 0.2f * p.value + 0.8f *_redistribVal(p.value);
-
-        p.saturation = _redistribVal(p.saturation);
-        p.saturation = 0.2f * p.saturation + 0.8f * _redistribVal(p.saturation);
 
         A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
     }
