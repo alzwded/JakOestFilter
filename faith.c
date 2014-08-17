@@ -340,7 +340,7 @@ static void _proc_bulk(void* data)
             p.saturation = t;//(0.3f * p.saturation + 0.7f * t);
 
             p.value = _redistribVal(p.value);
-            p.value = 0.4 * p.value + 0.6 *_redistribVal(p.value);
+            p.value = 0.5 * p.value + 0.5 *_redistribVal(p.value);
         } else /*if(dC4 < dC3)*/ {
             p.hue = fixHue(p.hue);
 
@@ -350,7 +350,8 @@ static void _proc_bulk(void* data)
                 p.saturation = _redistribVal(p.saturation);
                 p.value = 0.4f * p.value + 0.6f *_redistribVal(p.value);
             } else {
-                p.saturation = 1.f - _redistribVal(1.f - p.saturation);
+                float t = 1.f - _redistribVal(1.f - p.saturation);
+                p.saturation = 0.5f * p.saturation + 0.5f * t;
                 p.value = 0.2f * p.value + 0.8f *_redistribVal(p.value);
             }
 
