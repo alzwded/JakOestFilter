@@ -173,7 +173,7 @@ static void _preproc(hsvimg_t img)
     float min = 1.f, max = 0.f;
     float mins = 1.f, maxs = 0.f;
     size_t i, j;
-    size_t partitions[5] = { 0, 0, 0, 0, 0 };
+    double partitions[5] = { 0, 0, 0, 0, 0 };
     size_t C1partition = 999;
 
     // get normalization extents
@@ -192,7 +192,7 @@ static void _preproc(hsvimg_t img)
             A(img, i, j).value = (A(img, i, j).value - min) / max;
             //A(img, i, j).saturation = (A(img, i, j).saturation - mins) / maxs;
             if(_underThresh(A(img, i, j))) continue;
-            partitions[PARTITION(A(img, i, j).hue)]++;
+            partitions[PARTITION(A(img, i, j).hue)] += A(img, i, j).saturation;
         }
     }
 
@@ -200,9 +200,10 @@ static void _preproc(hsvimg_t img)
 
     // get dominant color
     j = 0;
+    double k =-1.0;
     for(i = 0; i < 5; ++i) {
         if(partitions[i] > j) {
-            j = partitions[i];
+            k = partitions[i];
             C1 = _partitionedHues[i];
             C1partition = i;
         }
