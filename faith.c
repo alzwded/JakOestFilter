@@ -263,11 +263,11 @@ static inline float fixHue(float hue)
     float clor1 = C1, clor2 = C2;
     if(abs(clor2 - clor1) == dist(clor1, clor2)) {
         if(C2 > C1) {
-            mode = 0;
+            mode = 1;
             clor1 = C1;
             clor2 = C2;
         } else {
-            mode = 1;
+            mode = 0;
             clor1 = C2;
             clor2 = C1;
         }
@@ -287,7 +287,9 @@ static inline float fixHue(float hue)
         float t = (float)dist(hue, clor1) / (float)(dist(hue, clor1) + dist(hue, clor2));
         if(mode == 0) {
             t = _redistribVal(t);
+            t = _redistribVal(t);
         } else if(mode == 1) {
+            t = 1.f - _redistribVal(1.f - t);
             t = 1.f - _redistribVal(1.f - t);
         }
         hue = clor1 + t * (float)dist(clor1, clor2);
@@ -297,7 +299,9 @@ static inline float fixHue(float hue)
         t = 1.f - t;
         if(mode == 0) {
             t = _redistribVal(t);
+            t = _redistribVal(t);
         } else if(mode == 1) {
+            t = 1.f - _redistribVal(1.f - t);
             t = 1.f - _redistribVal(1.f - t);
         }
         hue = clor1 + t * (float)dist(clor1, clor2);
