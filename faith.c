@@ -351,7 +351,7 @@ static void _proc_bulk(void* data)
                 p.value = 0.4f * p.value + 0.6f *_redistribVal(p.value);
             } else {
                 float t = _redistribVal(p.saturation);
-                p.saturation = 0.2f * p.saturation + 0.8f * t;
+                p.saturation = 0.4f * p.saturation + 0.6f * t;
                 p.value = 0.2f * p.value + 0.8f *_redistribVal(p.value);
             }
 
