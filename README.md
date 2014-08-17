@@ -46,6 +46,11 @@ The output files will be named `file1.out.jpg`, `file2.out.jpg` etc.
 Changelog
 =========
 
+v1.3.3
+------
+
+Overhaul the faith filter. Fix problems (colours were coming out of left field in some scenarios) and tweak parameters to fulfil my vision.
+
 v1.3.2
 ------
 

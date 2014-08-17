@@ -1,5 +1,5 @@
 PLA = i386
-RVERSION = 1.3.2
+RVERSION = 1.3.3
 VERSION = '"'$(RVERSION)'"'
 CC = gcc
 CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION)
