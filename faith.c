@@ -341,7 +341,7 @@ static void _proc_bulk(void* data)
 #endif
 
 
-        if(dC3 < dC4 || _underThresh(p)) {
+        if(dC3 < dC4) {
             p.hue = fixHue(p.hue);
 
             // since it's outside of our color arc, desaturate it a bit
@@ -352,7 +352,7 @@ static void _proc_bulk(void* data)
             p.saturation = t;//(0.3f * p.saturation + 0.7f * t);
 
             p.value = _redistribVal(p.value);
-            p.value = 0.f * p.value + 1.f *_redistribVal(p.value);
+            p.value = 0.5 * p.value + 0.5 *_redistribVal(p.value);
         } else /*if(dC4 < dC3)*/ {
             p.hue = fixHue(p.hue);
 
@@ -360,11 +360,11 @@ static void _proc_bulk(void* data)
 
             if(dC1 < dC2) {
                 p.saturation = 0.6f * p.saturation + 0.4f * _redistribVal(p.saturation);
-                p.value = 0.7f * p.value + 0.3f *_redistribVal(p.value);
+                p.value = 0.4f * p.value + 0.6f *_redistribVal(p.value);
             } else {
                 float t = _redistribVal(p.saturation);
                 p.saturation = 0.8f * p.saturation + 0.2f * t;
-                p.value = 0.5f * p.value + 0.5f *_redistribVal(p.value);
+                p.value = 0.2f * p.value + 0.8f *_redistribVal(p.value);
             }
 
         }
