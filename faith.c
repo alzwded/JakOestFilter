@@ -288,7 +288,11 @@ static inline float fixHue(float hue)
         if(mode == 0) {
             t = _redistribVal(t);
             t = _redistribVal(t);
+            t = _redistribVal(t);
+            t = _redistribVal(t);
         } else if(mode == 1) {
+            t = 1.f - _redistribVal(1.f - t);
+            t = 1.f - _redistribVal(1.f - t);
             t = 1.f - _redistribVal(1.f - t);
             t = 1.f - _redistribVal(1.f - t);
         }
@@ -300,7 +304,11 @@ static inline float fixHue(float hue)
         if(mode == 0) {
             t = _redistribVal(t);
             t = _redistribVal(t);
+            t = _redistribVal(t);
+            t = _redistribVal(t);
         } else if(mode == 1) {
+            t = 1.f - _redistribVal(1.f - t);
+            t = 1.f - _redistribVal(1.f - t);
             t = 1.f - _redistribVal(1.f - t);
             t = 1.f - _redistribVal(1.f - t);
         }
@@ -351,11 +359,11 @@ static void _proc_bulk(void* data)
             p.value = _redistribVal(p.value);
 
             if(dC1 < dC2) {
-                p.saturation = _redistribVal(p.saturation);
+                p.saturation = 0.6f * p.saturation + 0.4f * _redistribVal(p.saturation);
                 p.value = 0.4f * p.value + 0.6f *_redistribVal(p.value);
             } else {
                 float t = _redistribVal(p.saturation);
-                p.saturation = 0.4f * p.saturation + 0.6f * t;
+                p.saturation = 0.8f * p.saturation + 0.2f * t;
                 p.value = 0.2f * p.value + 0.8f *_redistribVal(p.value);
             }
 
