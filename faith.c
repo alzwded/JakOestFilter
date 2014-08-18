@@ -287,9 +287,7 @@ static inline float fixHue(float hue)
         float t = (float)dist(hue, clor1) / (float)(dist(hue, clor1) + dist(hue, clor2));
         if(mode == 0) {
             t = _redistribVal(t);
-            t = _redistribVal(t);
         } else if(mode == 1) {
-            t = 1.f - _redistribVal(1.f - t);
             t = 1.f - _redistribVal(1.f - t);
         }
         hue = clor1 + t * (float)dist(clor1, clor2);
@@ -299,9 +297,7 @@ static inline float fixHue(float hue)
         t = 1.f - t;
         if(mode == 0) {
             t = _redistribVal(t);
-            t = _redistribVal(t);
         } else if(mode == 1) {
-            t = 1.f - _redistribVal(1.f - t);
             t = 1.f - _redistribVal(1.f - t);
         }
         hue = clor1 + t * (float)dist(clor1, clor2);
