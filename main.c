@@ -17,6 +17,7 @@ extern img_t mosaic(img_t const);
 extern img_t mobord(img_t const);
 
 extern img_t faith(img_t const);
+extern img_t rgfilter(img_t const);
 
 img_t (*rec_fn)(img_t const) = NULL;
 
@@ -119,6 +120,7 @@ void usage(char const* name)
     fprintf(stderr, "                   -2 (mosaic)\n");
     fprintf(stderr, "                   -3 (mobord)\n");
     fprintf(stderr, "                   -4 (faith)\n");
+    fprintf(stderr, "                   -5 (rgfilter)\n");
     exit(255);
 }
 
@@ -152,6 +154,9 @@ int main(int argc, char* argv[])
         break;
     case '4':
         rec_fn = faith;
+        break;
+    case '5':
+        rec_fn = rgfilter;
         break;
     default:
         usage(argv[0]);

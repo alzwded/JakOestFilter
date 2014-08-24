@@ -187,6 +187,40 @@ static inline void _incPartition(double* val, hsv_t p)
     }
 }
 
+static void _preprocRG(hsvimg_t img)
+{
+    float min = 1.f, max = 0.f;
+    float mins = 1.f, maxs = 0.f;
+    size_t i, j;
+
+    // get normalization extents
+    for(i = 0; i < img.h; ++i) {
+        for(j = 0; j < img.w; ++j) {
+            if(A(img, i, j).value < min) min = A(img, i, j).value;
+            if(A(img, i, j).value > max) max = A(img, i, j).value;
+            if(A(img, i, j).saturation < mins) mins = A(img, i, j).saturation;
+            if(A(img, i, j).saturation > maxs) maxs = A(img, i, j).saturation;
+        }
+    }
+
+    // normalize and partition
+    for(i = 0; i < img.h; ++i) {
+        for(j = 0; j < img.w; ++j) {
+            A(img, i, j).value = (A(img, i, j).value - min) / max;
+            //A(img, i, j).saturation = (A(img, i, j).saturation - mins) / maxs;
+        }
+    }
+
+    C1 = 0;
+    C2 = 120;
+    //C1 = 120;
+    //C2 = 0;
+    C3 = 240;
+    C4 = 60;
+
+    printf("color points: %d %d %d %d\n", C1, C2, C3, C4);
+}
+
 static void _preproc(hsvimg_t img)
 {
     float min = 1.f, max = 0.f;
@@ -360,7 +394,8 @@ static void _proc_bulk(void* data)
     }
 }
 
-img_t faith(img_t const img)
+
+static img_t _faithProc(img_t const img, void (*preproc)(hsvimg_t))
 {
     img_t ret = { img.w, img.h, (pixel_t*)malloc(img.w * img.h * sizeof(pixel_t)) };
     hsvimg_t hsvimg = { img.w, img.h, (hsv_t*)malloc(img.w * img.h * sizeof(hsvimg_t)) };
@@ -384,7 +419,7 @@ img_t faith(img_t const img)
     jw_main();
 
     // normalize
-    _preproc(hsvimg);
+    preproc(hsvimg);
     // bulk processing
     jw_init(conf);
     for(i = 0; i < img.h; ++i) {
@@ -400,4 +435,14 @@ img_t faith(img_t const img)
     free(hsvimg.pixels);
     
     return ret;
+}
+
+img_t faith(img_t const img)
+{
+    return _faithProc(img, _preproc);
+}
+
+img_t rgfilter(img_t const img)
+{
+    return _faithProc(img, _preprocRG);
 }
