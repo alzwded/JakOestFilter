@@ -212,7 +212,7 @@ static void _preprocRG(hsvimg_t img)
     }
 
     C1 = 0;
-    C2 = 120;
+    C2 = 139;
     //C1 = 120;
     //C2 = 0;
     C3 = 240;
@@ -252,9 +252,9 @@ static void _preproc(hsvimg_t img)
     printf("partitions: R:%.3f Y:%.3f G:%.3f b:%.3f B:%.3f\n", partitions[0], partitions[1], partitions[2], partitions[3], partitions[4]);
 
     // get dominant color
-    double k =-1.0;
+    double k =1e27f;
     for(i = 0; i < 5; ++i) {
-        if(partitions[i] > k) {
+        if(partitions[i] < k) {
             k = partitions[i];
             C1 = _partitionedHues[i];
             C1partition = i;
@@ -263,7 +263,7 @@ static void _preproc(hsvimg_t img)
 
     // get secondary color
     if(partitions[(C1partition + 1) % 5] + partitions[(C1partition + 2) % 5]
-            >= partitions[(C1partition + 4) % 5] + partitions[(C1partition + 3) % 5])
+            <= partitions[(C1partition + 4) % 5] + partitions[(C1partition + 3) % 5])
     {
         C2 = _partitionedHues[(C1partition + 1) % 5];
     } else {
@@ -289,6 +289,18 @@ static void _preproc(hsvimg_t img)
 static inline float _redistribVal(float p)
 {
     return sinf(p * 3.14159f / 2.f);
+}
+
+static inline float applyMode(int mode, float t)
+{
+    switch(mode) {
+    case 0:
+        return 0.5f * t + 0.5f * _redistribVal(t);
+    case 1:
+        return 0.5f * t + 0.5f * (1.f - _redistribVal(1.f - t));
+    default:
+        return t;
+    }
 }
 
 static inline float fixHue(float hue)
@@ -319,11 +331,7 @@ static inline float fixHue(float hue)
 
     if(dist(hue, C4) < dist(hue, C3)) {
         float t = (float)dist(hue, clor1) / (float)(dist(hue, clor1) + dist(hue, clor2));
-        if(mode == 0) {
-            t = _redistribVal(t);
-        } else if(mode == 1) {
-            t = 1.f - _redistribVal(1.f - t);
-        }
+        t = applyMode(mode, t);
         hue = clor1 + t * (float)dist(clor1, clor2);
     } else {
         hue = fmodf((hue + 180.f), 360);
@@ -352,43 +360,26 @@ static void _proc_bulk(void* data)
               dC2 = dist(p.hue, C2),
               dC3 = dist(p.hue, C3),
               dC4 = dist(p.hue, C4);
-#if 0
-        if(_underThresh(p)) {
-            p.hue = 0.f;
-            p.saturation = 0.f;
-
-            p.value = _redistribVal(p.value);
-            p.value = _redistribVal(p.value);
-        }
-#endif
-
 
         if(dC3 < dC4) {
             p.hue = fixHue(p.hue);
 
             // since it's outside of our color arc, desaturate it a bit
             float t = (1.f - _redistribVal(1.f - p.saturation));
-            t = 1.f - _redistribVal(1.f - t);
-            t = 1.f - _redistribVal(1.f - t);
-            t = 1.f - _redistribVal(1.f - t);
             p.saturation = t;//(0.3f * p.saturation + 0.7f * t);
-
-            p.value = _redistribVal(p.value);
         } else /*if(dC4 < dC3)*/ {
             p.hue = fixHue(p.hue);
 
-            p.value = _redistribVal(p.value);
-
             if(dC1 < dC2) {
                 p.saturation = _redistribVal(p.saturation);
-                p.value = 0.7f * p.value + 0.3f *_redistribVal(p.value);
             } else {
                 float t = _redistribVal(p.saturation);
                 p.saturation = 0.4f * p.saturation + 0.6f * t;
-                p.value = 0.5f * p.value + 0.5f *_redistribVal(p.value);
             }
-
         }
+
+        p.value = _redistribVal(p.value);
+        p.value = 0.4f * p.value + 0.6f * _redistribVal(p.value);
 
         A(mydata->out.asRGB, mydata->i, j) = _fromHSV(p);
     }

@@ -46,6 +46,14 @@ The output files will be named `file1.out.jpg`, `file2.out.jpg` etc.
 Changelog
 =========
 
+v1.3.4
+------
+
+Faith filter now searches for least represented colours.
+
+Added a new rgfilter inspired by the earliest 2-colour Technicolor technology.
+
+
 v1.3.3
 ------
 
