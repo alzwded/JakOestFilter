@@ -21,11 +21,10 @@ typedef struct {
 
 static short _partitionedHues[] = {
     0,
-    60,
-    120,
-    180,
-    240,
+    90,
+    185,
 };
+#define NUMPART (sizeof(_partitionedHues)/sizeof(_partitionedHues[0]))
 
 static struct {
     float max;
@@ -33,9 +32,7 @@ static struct {
 } _partitions[] = {
     { 30.f, 0 },
     { 90.f, 1 },
-    { 150.f, 2 },
-    { 210.f, 3 },
-    { 300.f, 4 },
+    { 240.f, 2 },
     { 999.f, 0 },
 };
 
@@ -226,8 +223,10 @@ static void _preproc(hsvimg_t img)
     float min = 1.f, max = 0.f;
     float mins = 1.f, maxs = 0.f;
     size_t i, j;
-    double partitions[5] = { 0, 0, 0, 0, 0 };
+    double partitions[NUMPART];
     size_t C1partition = 999;
+
+    memset(partitions, 0, NUMPART * sizeof(double));
 
     // get normalization extents
     for(i = 0; i < img.h; ++i) {
@@ -249,11 +248,12 @@ static void _preproc(hsvimg_t img)
         }
     }
 
-    printf("partitions: R:%.3f Y:%.3f G:%.3f b:%.3f B:%.3f\n", partitions[0], partitions[1], partitions[2], partitions[3], partitions[4]);
+    //printf("partitions: R:%.3f Y:%.3f G:%.3f b:%.3f B:%.3f\n", partitions[0], partitions[1], partitions[2], partitions[3], partitions[4]);
+    printf("partitions: R:%.3f Y:%.3f G:%.3f b:%.3f\n", partitions[0], partitions[1], partitions[2], partitions[3]);
 
     // get dominant color
     double k =1e27f;
-    for(i = 0; i < 5; ++i) {
+    for(i = 0; i < NUMPART; ++i) {
         if(partitions[i] < k) {
             k = partitions[i];
             C1 = _partitionedHues[i];
@@ -262,12 +262,12 @@ static void _preproc(hsvimg_t img)
     }
 
     // get secondary color
-    if(partitions[(C1partition + 1) % 5] + partitions[(C1partition + 2) % 5]
-            <= partitions[(C1partition + 4) % 5] + partitions[(C1partition + 3) % 5])
+    if(partitions[(C1partition + 1) % NUMPART]
+            <= partitions[(C1partition + NUMPART - 1) % NUMPART])
     {
-        C2 = _partitionedHues[(C1partition + 1) % 5];
+        C2 = _partitionedHues[(C1partition + 1) % NUMPART];
     } else {
-        C2 = _partitionedHues[(C1partition + 4) % 5];
+        C2 = _partitionedHues[(C1partition + NUMPART - 1) % NUMPART];
     }
 
     // determine 3rd and 4th points
@@ -288,7 +288,13 @@ static void _preproc(hsvimg_t img)
 
 static inline float _redistribVal(float p)
 {
-    return sinf(p * 3.14159f / 2.f);
+    float s = sinf(p * 3.14159f / 2.f);
+#ifdef NOTSOBRIGHT
+    float t = 0.05 + (0.65 * s + 0.15 * s * s); // add to 0.9
+#else
+    float t = 0.02 + (0.66 * s + 0.3 * sinf(s * 3.14159f / 2.f));
+#endif
+    return t;
 }
 
 static inline float applyMode(int mode, float t)

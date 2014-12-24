@@ -2,7 +2,7 @@ PLA = i386
 RVERSION = 1.3.4
 VERSION = '"'$(RVERSION)'"'
 CC = gcc
-CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION)
+CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION) -msse -msse2 -msse3 -ffast-math -mssse3
 LD = gcc
 LDOPTS = -ljpeg -lm -lrt
 SRCS = main.c ds800.c gs.c pixelio.c rc.c frame.c common.h mosaic.c mobord.c faith.c Makefile
