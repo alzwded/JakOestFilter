@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "common.h"
 
 // external subroutines
@@ -19,7 +20,13 @@ extern img_t mobord(img_t const);
 extern img_t faith(img_t const);
 extern img_t rgfilter(img_t const);
 
+// fwd decl
+static void randomizer(char const*);
+static void process(char const*);
+
 img_t (*rec_fn)(img_t const) = NULL;
+void (*processfn)(char const*) = process;
+
 
 /** generate the output file name */
 static char* getOutFileName(char const* file)
@@ -44,13 +51,14 @@ static char* getOutFileName(char const* file)
 /** initialise the recolouring engine */
 static void init_recolour()
 {
-    if(rec_fn == recolour) {
+    if(rec_fn == recolour || processfn == randomizer) {
         recolour_addRule(RC_G, RC_R, 1.29);
         recolour_addRule(RC_G, RC_B, 1.25);
         recolour_addRule(RC_R, RC_B, 0.7);
         recolour_addRule(RC_B, RC_G, 0.9);
         recolour_addRule(RC_R, RC_G, 1.1);
-    } else if(rec_fn == mobord) {
+    }
+    if(rec_fn == mobord || processfn == randomizer) {
         mosaic_addColour(20, 20, 60);
         mosaic_addColour(60, 60, 100);
         mosaic_addColour(128, 128, 192); // soft blue
@@ -59,7 +67,8 @@ static void init_recolour()
         mosaic_addColour(195, 230, 135); // light green
         mosaic_addColour(225, 237, 147); // yellow
         mosaic_addColour(250, 250, 142); // yellow2
-    } else if(rec_fn == mosaic) {
+    }
+    if(rec_fn == mosaic || processfn == randomizer) {
         mosaic_addColour(0, 0, 0);
         mosaic_addColour(0x20, 0x20, 0x20);
         mosaic_addColour(0x40, 0x40, 0x40);
@@ -113,6 +122,25 @@ static void process(char const* file)
     free(img.pixels);
 }
 
+void randomizer(char const* file)
+{
+    typedef img_t (*fn_t)(img_t const);
+    fn_t fns[] = {
+        mosaic,
+        mobord,
+        faith,
+        recolour,
+        rgfilter,
+    };
+    int const size = sizeof(fns)/sizeof(fns[0]);
+
+    int idx = (int)(rand() % size);
+
+    rec_fn = fns[idx];
+
+    return process(file);
+}
+
 void usage(char const* name)
 {
     fprintf(stderr, "usage: %s <filter> pic1.jpg pic2.jpg pic3.jpg ...\n", name);
@@ -121,6 +149,7 @@ void usage(char const* name)
     fprintf(stderr, "                   -3 (mobord)\n");
     fprintf(stderr, "                   -4 (faith)\n");
     fprintf(stderr, "                   -5 (rgfilter)\n");
+    fprintf(stderr, "                   -r (random filter)\n");
     exit(255);
 }
 
@@ -158,13 +187,18 @@ int main(int argc, char* argv[])
     case '5':
         rec_fn = rgfilter;
         break;
+    case 'r':
+        processfn = randomizer;
+        break;
     default:
         usage(argv[0]);
     }
 
+    srand(time(NULL));
+
     init_recolour();
 
-    for(i = 2; i < argc; process(argv[i++]));
+    for(i = 2; i < argc; processfn(argv[i++]));
 
     return 0;
 }
