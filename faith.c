@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <omp.h>
 #include "common.h"
-#include "JakWorkers.h"
 
 #define SATTHRESH (0.1f)
 #define VALTHRESH (0.05f)
@@ -400,33 +400,29 @@ static img_t _faithProc(img_t const img, void (*preproc)(hsvimg_t))
     size_t i, j;
     tdata_t* datas;
 
-    jw_config_t conf = JW_CONFIG_INITIALIZER;
-
     // process
     // toHSV
     datas = (tdata_t*)malloc(img.h * sizeof(tdata_t));
-    jw_init(conf);
+#pragma omp parallel for
     for(i = 0; i < img.h; ++i) {
         tdata_t* data = &datas[i];
         data->i = i;
         data->in.asRGB = img;
         data->out.asHSV = hsvimg;
-        jw_add_job(&_proc_toHSV, data);
+        _proc_toHSV(data);
     }
-    jw_main();
 
     // normalize
     preproc(hsvimg);
     // bulk processing
-    jw_init(conf);
+#pragma omp parallel for
     for(i = 0; i < img.h; ++i) {
         tdata_t* data = &datas[i];
         data->i = i;
         data->in.asHSV = hsvimg;
         data->out.asRGB = ret;
-        jw_add_job(&_proc_bulk, data);
+        _proc_bulk(data);
     }
-    jw_main();
 
     free(datas);
     free(hsvimg.pixels);

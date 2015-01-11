@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 #include "common.h"
-#include "JakWorkers.h"
 
 /** abritrary maximum number of rules */
 #define MAXRULES 10
@@ -92,17 +92,14 @@ img_t recolour(img_t const img)
 
     size_t i, j;
 
-    jw_config_t conf = JW_CONFIG_INITIALIZER;
-    jw_init(conf);
-
+#pragma omp parallel for
     for(i = 0; i < img.h; ++i) {
         tdata_t* data = (tdata_t*)malloc(sizeof(tdata_t));
         data->i = i;
         data->in = img;
         data->out = ret;
-        jw_add_job(&_tprocess, data);
+        _tprocess(data);
     }
-    jw_main();
     
     return ret;
 }

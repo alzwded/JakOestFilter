@@ -3,8 +3,8 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+#include <omp.h>
 #include "common.h"
-#include "JakWorkers.h"
 
 /** pi / 2 */
 #define PI_2 (3.14159 / 2.0)
@@ -73,12 +73,10 @@ img_t downSample800(img_t const img)
 {
     img_t ret = { 800, 800, (pixel_t*)malloc(800 * 800 * sizeof(pixel_t)) };
 
-    size_t i, j;
+    int i, j;
 
     float vw = (float)img.w / ret.w;
     float vh = (float)img.h / ret.h;
-
-    jw_config_t conf = JW_CONFIG_INITIALIZER;
 
     if(img.w < 800 || img.h < 800) {
         memcpy(ret.pixels, img.pixels, sizeof(pixel_t) * img.w * img.h);
@@ -87,12 +85,11 @@ img_t downSample800(img_t const img)
         return ret;
     }
 
-    jw_init(conf);
-
     assert(img.w >= 800 && img.h >= 800);
 
     tdata_t* datas = (tdata_t*)malloc(sizeof(tdata_t) * ret.h);
 
+#pragma omp parallel for
     for(i = 0; i < ret.h; ++i) {
         tdata_t* data = &datas[i];
         data->ret = &ret;
@@ -101,9 +98,8 @@ img_t downSample800(img_t const img)
         data->vw = vw;
         data->i = i;
         data->retw = ret.w;
-        jw_add_job(&tDS, data);
+        tDS(data);
     }
-    jw_main();
 
     free(datas);
 

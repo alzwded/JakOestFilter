@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 #include "common.h"
-#include "JakWorkers.h"
 
 static inline void _process(pixel_t pin[], pixel_t* p)
 {
@@ -82,18 +82,15 @@ img_t mobord(img_t const img)
     extern img_t mosaic(img_t const);
     img_t tmp = mosaic(img);
 
-    jw_config_t conf = JW_CONFIG_INITIALIZER;
-
     // process
-    jw_init(conf);
+#pragma omp parallel for
     for(i = 0; i < img.h; ++i) {
         tdata_t* data = (tdata_t*)malloc(sizeof(tdata_t));
         data->i = i;
         data->in = tmp;
         data->out = ret;
-        jw_add_job(&_tprocess, data);
+        _tprocess(data);
     }
-    jw_main();
 
     free(tmp.pixels);
     
