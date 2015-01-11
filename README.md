@@ -39,12 +39,22 @@ filters:    -1  original
             -2  mosaic
             -3  mobord
             -4  faith
+            -5  rgfilter
+            -r  random filter
 ```
 
 The output files will be named `file1.out.jpg`, `file2.out.jpg` etc.
 
 Changelog
 =========
+
+v1.4.0
+------
+
+* Switch to OpenMP for multithreading
+* Add win32 target using mingw
+* Improve faith and rgfilter filters
+* Added random filter option
 
 v1.3.4
 ------

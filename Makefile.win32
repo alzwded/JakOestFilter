@@ -7,11 +7,7 @@ ADD_CFLAGS = -I./libjpeg-win32/include -static
 ADD_LDOPTS = -Wl,--rpath=.,--rpath=../lib -L. -l:jpeg62.dll -static
 include Makefile.common
 .PHONY: dist
-dist: $(EXE)
-	mkdir -p dist/bin dist/lib dist/doc dist/src
-	cp $(EXE) dist/bin/
-	cp LICENSE README.md dist/doc/
-	cp $(SRCS) dist/src/
+dist: $(EXE) predist
 	cp jpeg62.dll dist/bin/
 	cp libjpeg-win32-note.txt dist/doc/
 	zip -r JakOestFilter-$(RVERSION)-$(PLA).zip dist/

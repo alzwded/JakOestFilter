@@ -18,3 +18,10 @@ clean:
 
 dist-clean:
 	rm -rf dist
+
+.PHONY: predist
+predist: $(EXE)
+	mkdir -p dist/bin dist/lib dist/doc dist/src
+	cp $(EXE) dist/bin/
+	cp LICENSE README.md dist/doc/
+	cp $(SRCS) dist/src/
