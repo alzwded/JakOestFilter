@@ -25,3 +25,8 @@ log
 dist
 *.tbz
 JakWorkers.h
+
+*.obj
+jakoest32.exe
+libjpeg-win32
+*.zip
