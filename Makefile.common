@@ -17,4 +17,4 @@ clean:
 	rm -f $(EXE) *.$(OBJEXT)
 
 dist-clean:
-	rm -rf dist JakOestFilter-v*.tbz JakOestFilter-v*.zip
+	rm -rf dist
