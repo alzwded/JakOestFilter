@@ -1,0 +1,4 @@
+JakOestFilter relies on the libjpeg to work, among other things.
+
+You can get the source code and builds for Windows over here:
+    http://gnuwin32.sourceforge.net/packages/jpeg.htm
