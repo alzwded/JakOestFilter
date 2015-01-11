@@ -26,7 +26,7 @@ dist: $(EXE)
 	tar cjvf JakOestFilter-$(RVERSION)-$(PLA).tbz dist
 
 clean:
-	rm -f $(EXE) *.o JakWorkers.h
+	rm -f $(EXE) *.o
 
 dist-clean:
 	rm -rf dist JakOestFilter-v*.tbz
