@@ -3,8 +3,8 @@ CC = i686-w64-mingw32-gcc
 LD = i686-w64-mingw32-gcc
 EXE = jakoest32.exe
 OBJEXT = obj
-ADD_CFLAGS = -I./libjpeg-win32/include
-ADD_LDOPTS = -Wl,--rpath=.,--rpath=../lib -L.
+ADD_CFLAGS = -I./libjpeg-win32/include -static
+ADD_LDOPTS = -Wl,--rpath=.,--rpath=../lib -L. -l:jpeg62.dll -static
 include Makefile.common
 .PHONY: dist
 dist: $(EXE)
@@ -12,6 +12,6 @@ dist: $(EXE)
 	cp $(EXE) dist/bin/
 	cp LICENSE README.md dist/doc/
 	cp $(SRCS) dist/src/
-	cp libjpeg.dll dist/lib/    
+	cp jpeg62.dll dist/bin/
 	cp libjpeg-win32-note.txt dist/doc/
 	zip -r JakOestFilter-$(RVERSION)-$(PLA).zip dist/

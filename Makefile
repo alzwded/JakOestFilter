@@ -4,7 +4,7 @@ LD = gcc
 EXE = jakoest
 OBJEXT = o
 ADD_CFLAGS = 
-ADD_LDOPTS = -lrt
+ADD_LDOPTS = -lrt -ljpeg
 include Makefile.common
 .PHONY: dist
 dist: $(EXE)
