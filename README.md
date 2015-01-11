@@ -5,10 +5,6 @@ Photo filter first developed to be applied to my 2013-14 Austrian Holiday photos
 
 This project lives on http://github.com/alzwded/JakOestFilter/
 
-This project depends on http://github.com/alzwded/JakWorkers/
-
-The dependency is handled by the makefile (on linux) by cloning the repo using `git` in the `../` directory. If you have obtained this project as a tarball, then you need to get JakWorkers manually and either copy in the `JakWorkers.h` header and `libjw.so` library here (and maybe even disable the make rule) or install git and get an internet connection.
-
 How it works
 ============
 
@@ -55,6 +51,8 @@ v1.4.0
 * Add win32 target using mingw
 * Improve faith and rgfilter filters
 * Added random filter option
+
+**Errata to the 1.4.0 release's README.md**: no, it does not actually depend on JakWorkers anymore.
 
 v1.3.4
 ------
