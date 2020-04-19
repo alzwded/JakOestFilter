@@ -22,6 +22,7 @@ extern img_t faith(img_t const);
 extern img_t rgfilter(img_t const);
 
 extern img_t cgadither(img_t const);
+extern img_t cgadither2(img_t const);
 
 // fwd decl
 static void randomizer(char const*);
@@ -96,10 +97,12 @@ static void process(char const* file)
     img_t img = readPixels(file);
     img_t alt = img;
 
-    printf("%s: getting square\n", file);
-    img = getSquare(img);
-    free(alt.pixels);
-    alt = img;
+    if(rec_fn != cgadither && rec_fn != cgadither2) {
+        printf("%s: getting square\n", file);
+        img = getSquare(img);
+        free(alt.pixels);
+        alt = img;
+    }
 
     printf("%s: downsampling\n", file);
     img = downSample800(img);
@@ -119,7 +122,7 @@ static void process(char const* file)
     }
 
     // FIXME make this an option
-    if(rec_fn != cgadither) {
+    if(rec_fn != cgadither && rec_fn != cgadither2) {
         char* outFile = getOutFileName(file, ".out.jpg");
         printf("%s: saving as %s\n", file, outFile);
         savePixels(img, outFile);
@@ -143,6 +146,7 @@ void randomizer(char const* file)
         recolour,
         rgfilter,
         cgadither,
+        cgadither2,
     };
     int const size = sizeof(fns)/sizeof(fns[0]);
 
@@ -162,6 +166,7 @@ void usage(char const* name)
     fprintf(stderr, "                   -4 (faith)\n");
     fprintf(stderr, "                   -5 (rgfilter)\n");
     fprintf(stderr, "                   -6 (cgadither)\n");
+    fprintf(stderr, "                   -7 (cgadither2)\n");
     fprintf(stderr, "                   -r (random filter)\n");
     exit(255);
 }
@@ -202,6 +207,9 @@ int main(int argc, char* argv[])
         break;
     case '6':
         rec_fn = cgadither;
+        break;
+    case '7':
+        rec_fn = cgadither2;
         break;
     case 'r':
         processfn = randomizer;
