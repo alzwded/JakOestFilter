@@ -8,6 +8,9 @@ This project lives on http://github.com/alzwded/JakOestFilter/
 How it works
 ============
 
+The `original` filter
+---------------------
+
 It applies the following transformations:
 
 1. it grabs the central square
@@ -15,34 +18,144 @@ It applies the following transformations:
 1. it applies some recolouring rules which amplifies the relative differences between the red, green and blue components (makes warm colours more proeminent)
 1. it frames the photo with a round frame thing
 
+The `mosaic` and `mobord` filters
+---------------------------------
+
+1. drops color information (convert to grayscale)
+1. map a section of the grayscale to a colour
+1. mobord does something funky with edge detection or something (I forget)
+1. ???
+1. profit!
+
+The `faith` & `rgfilter` filters
+--------------------------------
+
+These are related.
+
+These try to expand the gamut for a part of the HSV cylinder, while decolouring sections of colours outside that section. It forces colour bleed, basically. The image is also normalized and over-exposed in a non-linear way.
+
+The `rgfilter` variant basically does away with the heuristics that detect the "sort-of used sometimes" colours and always uses a color section or Red-Green.
+
+The `cgadither` and `cgadither2ˇ filters
+----------------------------------------
+
+These filters throw away 99% of colour, saturation and luminance information, and convert your image to what you would see on an old & basic CGA monitor.
+
+By default, they use the Cyan-Magenta-White-Black pallette, but you can turn the blue channel off to get the alternate pallette.
+
+The `cgadither` algorithm is very basic and REALLY throws away most of the HSL information:
+
+```
+   No. Step                         Colour Space
+   0. in RGB                        (r[], g[], b[])
+   1. RGB -> HSL                    (h[], s[], l[])
+   2. dither_m_c                    (isMagenta?, s[], l[])
+   3. dither_s                      (isMagenta?, isGray?, l[])
+   4. dither_l                      (isMagenta?, isGray?, isWhite?)
+   5. output                        (r[], g[], b[])
+        isGray?
+            isWhite?
+                out = FFFFFF
+            else
+                out = 000000
+        else
+            isMagenta?
+                out = FF00FF
+            else
+                out = 00FFFF
+
+```
+
+The `cgadither2` algorithm is a bit more advanced, bringing in some triangular noise into the equation. I don't know what colour the noise is since I just call `rand()`, but it's noisy.
+
+Anyway, the most interesting part is that it tries to find a sweet spot (of sorts) between using Black and White/Yellow to conserve luminance, and Cyan/Green, Magenta/Red and White/Yellow to conserve colour. Black is there to even things out saturation-wise.
+
+So it goes step by step and computes dithering between Cyan and Magenta, grays and colours, white and black, and overall dithering between black, colour and white. The output layer then has some simple logic to resolve the various numbers that were crunched.
+
+```
+   No. Step                         Colour Space
+   0. in RGB                        (r[], g[], b[])
+   1. RGB -> HSL                    (h[], s[], l[])
+   2. dither_m_c_y                  (M|C|Y, s[], l[])
+   3. dither_s                      (M|C|Y, isGray?, l[])
+   4. dither_l                      (M|C|Y, isGray?, isWhite?)
+   5. dither_w_c_b                  (M|C|Y, isGray?, isWhite?, white|color|black)
+   6. _output_layer                 (r[], g[], b[])
+        isGray?
+            isWhite?
+                out = FFFFFF
+            else
+                out = 000000
+        else white|color|black
+            is white
+                out = FFFFFF
+            is black 
+                out = 000000
+            is color
+                is M
+                    out = FF00FF
+                is Y
+                    out = FFFFFF
+                is C
+                    out = 00FFFF
+    opt_alt implies the blue channel is 0
+```
+
 Conclusion
 ==========
 
+Conclusion ca. 2014
+-------------------
+
 I like it, I've learnt some stuff.
+
+Conclusion ca. 2020
+-------------------
+
+I still like it. I continue to learn stuff :-)
 
 TODO
 ====
 
 * Upsampling to make stuff look more cartoony.
 * raise sharpness / contrast (as a combo, I know what I mean by this)
+* better command argument parsing
+* more flexible pipelines (oof, we're starting to sound like ImageMagick, aren't we?!) to pick the serializer (jpg vs tga), the enable/disable the aspect ratio correcter, downsampler or frame, etc
+* ds800 should be make more generic to allow _just_ downsampling, not necessarily making things square
 
 Usage
 =====
 
 ```sh
-jakoest <filter> file1.jpg file2.jpg ...
-filters:    -1  original
-            -2  mosaic
-            -3  mobord
-            -4  faith
-            -5  rgfilter
-            -r  random filter
+usage: jakoest32 <filter> pic1.jpg pic2.jpg pic3.jpg ...
+    filter may be: -1  (original)
+                   -2  (mosaic)
+                   -3  (mobord)
+                   -4  (faith)
+                   -5  (rgfilter)
+                   -6  (cgadither)
+                   -6a (cgadither with RYGb pallette)
+                   -7  (cgadither2)
+                   -7a (cgadither2 with RYGb pallette)
+                   -r  (random filter)
 ```
 
 The output files will be named `file1.out.jpg`, `file2.out.jpg` etc.
 
+For the `cgadither` filters, the output will be a TARGA lossless 32bit file (`*.out.tga`) and the aspect ratio adjustment and downsampling stages will be skipped (the image will keep its original resolution).
+
 Changelog
 =========
+
+v1.5.0
+------
+
+* Add `cgadither` and `cgadither2` filters
+    + `cgadither` is a very basic CGA color downsampling & dithering tool which produces pretty "eah" results
+    + `cgadither2` is a bit more involved and uses triangle noise to somehow reduce the color resolution by 99% to your basic 4 CGA colors
+    + by default, uses the Cyan-Magenta pallette. If the command line option has an `a` appended, it will use the alternate RYG pallette (which makes your eyes bleed)
+* Update win32 Makefile to work with whatever the current mingw32 expects; the build is back to 32bits but I can't be bothered to figure MinGW out all over again
+* Added TGA output utility (hard-coded to a 32bit lossless image with one plane)
 
 v1.4.0
 ------
