@@ -36,7 +36,7 @@ These try to expand the gamut for a part of the HSV cylinder, while decolouring 
 
 The `rgfilter` variant basically does away with the heuristics that detect the "sort-of used sometimes" colours and always uses a color section or Red-Green.
 
-The `cgadither` and `cgadither2ˇ filters
+The `cgadither` and `cgadither2` filters
 ----------------------------------------
 
 These filters throw away 99% of colour, saturation and luminance information, and convert your image to what you would see on an old & basic CGA monitor.
