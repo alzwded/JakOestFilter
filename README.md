@@ -125,6 +125,7 @@ TODO
 * more flexible pipelines (oof, we're starting to sound like ImageMagick, aren't we?!) to pick the serializer (jpg vs tga), the enable/disable the aspect ratio correcter, downsampler or frame, etc
 * ds800 should be make more generic to allow _just_ downsampling, not necessarily making things square
 * fix the "alternate pallette" when dithering colors *for cgadither(1)* (fixed for cgadither2) -- RYG are different to MWC, so the dithering needs to be shifted a bit... c.f. a red parrot that gets R&Y dithering, even though red is part of the pallette
+* implement png output; TGA has some stupid max file size limits (although oddly enough, I can still open the image in IrfanView as RAW by skipping over the header; or maybe I should add .raw output as well)
 
 Usage
 =====
