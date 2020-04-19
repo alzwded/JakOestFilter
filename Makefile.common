@@ -1,4 +1,4 @@
-RVERSION = 1.5.0
+RVERSION = 1.5.1
 VERSION = '"'$(RVERSION)'"'
 CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION) -msse -msse2 -msse3 -mssse3 -ffast-math -fopenmp -march=prescott
 LDOPTS = -lm -lgomp -pthread
