@@ -5,6 +5,8 @@
 #include <omp.h>
 #include "common.h"
 
+extern int opt_alt;
+
 static float PI = acos(-1);
 
 typedef struct {
@@ -156,33 +158,6 @@ static void _proc_toHSL(void* data)
     }
 }
 
-static void _normalize(hsvimg_t img)
-{
-    float min = 1.f, max = 0.f;
-    float mins = 1.f, maxs = 0.f;
-    size_t i, j;
-
-    // get normalization extents
-    for(i = 0; i < img.h; ++i) {
-        for(j = 0; j < img.w; ++j) {
-            if(A(img, i, j).value < min) min = A(img, i, j).value;
-            if(A(img, i, j).value > max) max = A(img, i, j).value;
-            if(A(img, i, j).saturation < mins) mins = A(img, i, j).saturation;
-            if(A(img, i, j).saturation > maxs) maxs = A(img, i, j).saturation;
-        }
-    }
-
-    // normalize and partition
-#pragma parallel for
-    for(i = 0; i < img.h; ++i) {
-        int k = 0;
-        for(k = 0; k < img.w; ++k) {
-            A(img, i, k).value = (A(img, i, k).value - min) / max;
-            A(img, i, k).saturation = (A(img, i, k).saturation - mins) / maxs;
-        }
-    }
-}
-
 static inline void _genRandom(int n, int* a)
 {
     int i;
@@ -206,8 +181,8 @@ static void _dither_w_c_b(void* data)
         // lum 0.00..0.15..0.85..1.00
         Nu = (float)MY(randomness, j) / (float)RAND_MAX;
         if(p.value > 0.5f) {
-            float a = 0.2, b = 1.f, c = 0.8;
-            float fc = (c-a)/(b-a);
+            const float a = 0.2, b = 1.f, c = 0.8;
+            const float fc = (c-a)/(b-a);
             float lum = p.value; //(p.value < fc) ? (a + sqrtf(p.value * (b-a) * (c-a))) : (b-sqrtf((1-p.value)*(b-a)*(b-c)));
             float x = (Nu < fc) ? a + sqrtf(Nu * (b - a) * (c - a)) : (b-sqrtf(1-Nu)*(b-a)*(b-c));
 
@@ -217,8 +192,8 @@ static void _dither_w_c_b(void* data)
             //printf(">> a %f b %f c %f fc %f Nu %f x %f\n", a, b, c, fc, Nu, x);
             wcb = (lum + x > 0.6) ? 2 : 1;
         } else {
-            float a = 0.0f, b = 0.8f, c = 0.2;
-            float fc = (c-a)/(b-a);
+            const float a = 0.0f, b = 0.8f, c = 0.2;
+            const float fc = (c-a)/(b-a);
             float lum = p.value; //(p.value < fc) ? (a + sqrtf(p.value * (b-a) * (c-a))) : (b-sqrtf((1-p.value)*(b-a)*(b-c)));
             float x = (Nu < fc) ? a + sqrtf(Nu * (b - a) * (c - a)) : (b-sqrtf(1-Nu)*(b-a)*(b-c));
 
@@ -277,7 +252,7 @@ static void _dither_m_c_y(void* data)
         // 012  m<c, m>y, c<y       101
         // 102  m>c, m<y, c<y       110
         // 012  m<c, m<y, c<y       111
-        uint8_t colorMappings[][2] = {
+        static const uint8_t colorMappings[][2] = {
             { YELLOWI, CYANI },
             { YELLOWI, MAGENTAI },
             { YELLOWI, CYANI },
@@ -287,7 +262,7 @@ static void _dither_m_c_y(void* data)
             { CYANI, MAGENTAI },
             { MAGENTAI, CYANI }
         };
-        uint8_t distances[][2] = {
+        const uint8_t distances[][2] = {
             { dY, dC },
             { dY, dM },
             { dY, dC },
@@ -305,16 +280,13 @@ static void _dither_m_c_y(void* data)
         x = 2.f * x - 1.f;
         MY(color, j) = (median + x > 0.f) ? colorMappings[cas][1] : colorMappings[cas][0];
 
-#if 0
-        median = 1.f - ((float)dM) / ((float)dM + (float)dC);
-        Nu = (float)MY(randomness, j) / (float)RAND_MAX;
-        float x = (Nu < median) ? sqrtf(Nu * median) : (1.f - sqrtf((1.f-Nu)*(1.f - median)));
-        median = 2.f * median - 1.f;
-        x = 2.f * x - 1.f;
-        MY(isMagenta, j) = median + x > 0.f;
-#endif
     }
 
+#undef MINUS
+#undef YELLOW
+#undef MINUS_MAGENTA
+#undef MINUS_CYAN
+#undef MINUS_YELLOW
 #undef MAGENTA
 #undef CYAN
 #undef MY
@@ -330,15 +302,14 @@ static void _dither_s(void* data)
     for(j = 0; j < mydata->img.asHSV.w; ++j) {
         hsv_t p = A(mydata->img.asHSV, mydata->i, j);
         // project to triangle
-        float c = 0.33, b = 1.f, a = 0.f;
+        const float c = 0.33, b = 1.f, a = 0.f;
         float sat = 1.f - p.saturation;
-        float fc = (c-a)/(b-a);
+        const float fc = (c-a)/(b-a);
         sat = (sat < fc) ? (a + sqrtf(sat * (b-a) * (c-a))) : (b - sqrtf((1-sat)*(b-a)*(b-c)));
 
         Nu = (float)MY(randomness, j) / (float)RAND_MAX;
         median = sat;
         float x = (Nu < median) ? sqrtf(Nu * median) : (1.f - sqrtf((1.f-Nu)*(1.f - median)));
-        //x = 2.f * x - 1.f;
         median = 2.f * median - 1.f;
         MY(isGray, j) = median + x > 0.5f;
     }
@@ -377,8 +348,9 @@ static void _output_layer(void* data)
 
         if(MY(isGray, j)) {
             if(MY(isWhite, j)) {
-                // TODO yellow in alternate pallette
-                p.r = p.g = p.b = 255;
+                p.r = 255;
+                p.g = 255;
+                p.b = (!opt_alt) * 255;
                 //printf("gray -> white\n");
             } else {
                 // black is always black :-)
@@ -388,26 +360,31 @@ static void _output_layer(void* data)
         } else {
             switch(MY(wcb, j)) {
                 case 0:
-                    //printf("B\n");
                     p.r = p.g = p.b = 0;
                     break;
                 case 2:
-                    //printf("W\n");
-                    p.r = p.g = p.b = 255;
+                    p.r = 255;
+                    p.g = 255;
+                    p.b = (!opt_alt) * 255;
                     break;
                 case 1:
                     switch(MY(color, j)) {
                         case CYANI:
-                            //printf("cc\n");
-                            p.r = 0;    p.g = 255;  p.b = 255;
+                            p.r = 0;
+                            p.g = 255;
+                            p.b = (!opt_alt) * 255;
                             break;
                         case MAGENTAI:
                             //printf("cm\n");
-                            p.r = 255;  p.g = 0;    p.b = 255;
+                            p.r = 255;
+                            p.g = 0;
+                            p.b = (!opt_alt) * 255;
                             break;
                         case YELLOWI:
                             //printf("cy\n");
-                            p.r = p.g = p.b = 255;
+                            p.r = 255;
+                            p.g = 255;
+                            p.b = (!opt_alt) * 255;
                             break;
                     }
                     break;
@@ -431,20 +408,29 @@ static void _output_layer(void* data)
    No. Step                         Colour Space
    0. in RGB                        (r[], g[], b[])
    1. RGB -> HSL                    (h[], s[], l[])
-   2. dither_m_c_y                    (isMagenta?, s[], l[])
-   3. dither_s                      (isMagenta?, isGray?, l[])
-   4. dither_l                      (isMagenta?, isGray?, isWhite?)
-   5. output                        (r[], g[], b[])
+   2. dither_m_c_y                  (M|C|Y, s[], l[])
+   3. dither_s                      (M|C|Y, isGray?, l[])
+   4. dither_l                      (M|C|Y, isGray?, isWhite?)
+   5. dither_w_c_b                  (M|C|Y, isGray?, isWhite?, white|color|black)
+   6. _output_layer                 (r[], g[], b[])
         isGray?
             isWhite?
                 out = FFFFFF
             else
                 out = 000000
-        else
-            isMagenta?
-                out = FF00FF
-            else
-                out = 00FFFF
+        else white|color|black
+            is white
+                out = FFFFFF
+            is black 
+                out = 000000
+            is color
+                is M
+                    out = FF00FF
+                is Y
+                    out = FFFFFF
+                is C
+                    out = 00FFFF
+    opt_alt implies the blue channel is 0
  */
 img_t cgadither2(img_t const img)
 {
@@ -473,10 +459,6 @@ img_t cgadither2(img_t const img)
         _proc_toHSL(data);
     }
 
-    // 1.5 normalize to get a more full colour space
-    _normalize(hsvimg);
-
-    // bulk processing
     // 2. dither colors to magenta or cyan
     _genRandom(img.w * img.h, randomness);
     uint8_t* color = (uint8_t*)malloc(img.w * img.h * sizeof(uint8_t));

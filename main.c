@@ -5,6 +5,9 @@
 #include "common.h"
 #include "tga.h"
 
+// alternate CGA pallette in the cgadither filters
+int opt_alt = 0;
+
 // external subroutines
 extern img_t readPixels(char const*);
 extern int savePixels(img_t const, char const*);
@@ -160,14 +163,16 @@ void randomizer(char const* file)
 void usage(char const* name)
 {
     fprintf(stderr, "usage: %s <filter> pic1.jpg pic2.jpg pic3.jpg ...\n", name);
-    fprintf(stderr, "    filter may be: -1 (original)\n");
-    fprintf(stderr, "                   -2 (mosaic)\n");
-    fprintf(stderr, "                   -3 (mobord)\n");
-    fprintf(stderr, "                   -4 (faith)\n");
-    fprintf(stderr, "                   -5 (rgfilter)\n");
-    fprintf(stderr, "                   -6 (cgadither)\n");
-    fprintf(stderr, "                   -7 (cgadither2)\n");
-    fprintf(stderr, "                   -r (random filter)\n");
+    fprintf(stderr, "    filter may be: -1  (original)\n");
+    fprintf(stderr, "                   -2  (mosaic)\n");
+    fprintf(stderr, "                   -3  (mobord)\n");
+    fprintf(stderr, "                   -4  (faith)\n");
+    fprintf(stderr, "                   -5  (rgfilter)\n");
+    fprintf(stderr, "                   -6  (cgadither)\n");
+    fprintf(stderr, "                   -6a (cgadither with RYGb pallette)\n");
+    fprintf(stderr, "                   -7  (cgadither2)\n");
+    fprintf(stderr, "                   -7a (cgadither2 with RYGb pallette)\n");
+    fprintf(stderr, "                   -r  (random filter)\n");
     exit(255);
 }
 
@@ -187,7 +192,7 @@ int main(int argc, char* argv[])
         usage(argv[0]);
     }
 
-    if(strlen(argv[1]) != 2) usage(argv[0]);
+    if(strlen(argv[1]) < 2) usage(argv[0]);
 
     switch(argv[1][1]) {
     case '1':
@@ -207,9 +212,11 @@ int main(int argc, char* argv[])
         break;
     case '6':
         rec_fn = cgadither;
+        if(argv[1][2] == 'a') opt_alt = 1;
         break;
     case '7':
         rec_fn = cgadither2;
+        if(argv[1][2] == 'a') opt_alt = 1;
         break;
     case 'r':
         processfn = randomizer;

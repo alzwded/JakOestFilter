@@ -31,3 +31,5 @@ jakoest32.exe
 libjpeg-win32
 *.zip
 *.tga
+*.jfif
+*.png

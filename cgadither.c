@@ -5,6 +5,8 @@
 #include <omp.h>
 #include "common.h"
 
+extern int opt_alt;
+
 static float PI = acos(-1);
 
 typedef struct {
@@ -301,23 +303,18 @@ static void _output_layer(void* data)
         pixel_t p = A(mydata->img.asRGB, mydata->i, j);
 
         if(MY(isGray, j)) {
-        //if(mydata->isGray[mydata->img.asRGB.w * mydata->i + j]) {
             if(MY(isWhite, j)) {
-            //if(mydata->isWhite[mydata->img.asRGB.w * mydata->i + j]) {
-                // TODO yellow in alternate pallette
-                p.r = p.g = p.b = 255;
+                p.r = p.g = 255;
+                p.b = (!opt_alt) * 255;
             } else {
                 // black is always black :-)
                 p.r = p.g = p.b = 0;
             }
         } else {
             if(MY(isMagenta, j)) {
-            //if(mydata->isMagenta[mydata->img.asRGB.w * mydata->i + j]) {
-                // TODO red in alternate pallette
-                p.r = 255;  p.g = 0;    p.b = 255;
+                p.r = 255;  p.g = 0;    p.b = (!opt_alt) * 255;
             } else {
-                // TODO green in alternate pallette
-                p.r = 0;    p.g = 255;  p.b = 255;
+                p.r = 0;    p.g = 255;  p.b = (!opt_alt) * 255;
             }
         }
 #if 0
