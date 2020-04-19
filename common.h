@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 /** Pixel struct */
 typedef struct {

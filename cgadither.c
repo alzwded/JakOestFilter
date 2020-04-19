@@ -5,6 +5,8 @@
 #include <omp.h>
 #include "common.h"
 
+static float PI = acos(-1);
+
 typedef struct {
     short hue;
     float saturation, value;
@@ -171,8 +173,8 @@ static void _normalize(hsvimg_t img)
     for(i = 0; i < img.h; ++i) {
         int k = 0;
         for(k = 0; k < img.w; ++k) {
-            //A(img, i, k).value = (A(img, i, k).value - min) / max;
-            //A(img, i, k).saturation = (A(img, i, k).saturation - mins) / maxs;
+            A(img, i, k).value = (A(img, i, k).value - min) / max;
+            A(img, i, k).saturation = (A(img, i, k).saturation - mins) / maxs;
         }
     }
 }
@@ -214,10 +216,16 @@ static void _dither_m_c(void* data)
 
         median = 1.f - ((float)dM) / ((float)dM + (float)dC);
         Nu = (float)MY(randomness, j) / (float)RAND_MAX;
+#if 0
         //Nu = mydata->randomness[mydata->img.asHSV.w * mydata->i + j] / RAND_MAX;
 
         MY(isMagenta, j) = (Nu < median);
         //mydata->isMagenta[mydata->img.asHSV.w * mydata->i + j] = (Nu < median);
+#endif
+        float x = (Nu < median) ? sqrtf(Nu * median) : (1.f - sqrtf((1.f-Nu)*(1.f - median)));
+        median = 2.f * median - 1.f;
+        x = 2.f * x - 1.f;
+        MY(isMagenta, j) = median + x > 0.f;
     }
 
 #undef MAGENTA
@@ -235,12 +243,21 @@ static void _dither_s(void* data)
     for(j = 0; j < mydata->img.asHSV.w; ++j) {
         hsv_t p = A(mydata->img.asHSV, mydata->i, j);
 
+#if 0
         median = 1.f - p.saturation;
         Nu = (float)MY(randomness, j) / (float)RAND_MAX;
         //Nu = mydata->randomness[mydata->img.asHSV.w * mydata->i + j] / RAND_MAX;
 
         MY(isGray, j) = (Nu < median + 0.00001f);
         //mydata->isGray = (Nu < median + 0.00001f);
+#else
+        Nu = (float)MY(randomness, j) / (float)RAND_MAX;
+        median = 1.f - p.saturation; // c
+        float x = (Nu < median) ? sqrtf(Nu * median) : (1.f - sqrtf((1.f-Nu)*(1.f - median)));
+        x = 2.f * x - 1.f;
+        median = 2.f * median - 1.f;
+        MY(isGray, j) = median + x > 0.f;
+#endif
     }
 #undef MY
 }
@@ -255,12 +272,20 @@ static void _dither_l(void* data)
     for(j = 0; j < mydata->img.asHSV.w; ++j) {
         hsv_t p = A(mydata->img.asHSV, mydata->i, j);
 
+#if 0
         median = 1.f - (1.f - p.value); // the formula says 1-X, but we need to reverse the logic
         Nu = (float)MY(randomness, j) / (float)RAND_MAX;
         //Nu = mydata->randomness[mydata->img.asHSV.w * mydata->i + j] / RAND_MAX;
 
         MY(isWhite, j) = (Nu < median + 0.00001f);
         //mydata->isWhite = (Nu < median + 0.00001f);
+#endif
+        Nu = (float)MY(randomness, j) / (float)RAND_MAX;
+        median = 1.f - (1.f - p.value); // c
+        float x = (Nu < median) ? sqrtf(Nu * median) : (1.f - sqrtf((1.f-Nu)*(1.f - median)));
+        x = 2.f * x - 1.f;
+        median = 2.f * median - 1.f;
+        MY(isWhite, j) = median + x > 0.f;
     }
 #undef MY
 }

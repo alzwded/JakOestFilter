@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "common.h"
+#include "tga.h"
 
 // external subroutines
 extern img_t readPixels(char const*);
@@ -31,22 +32,22 @@ void (*processfn)(char const*) = process;
 
 
 /** generate the output file name */
-static char* getOutFileName(char const* file)
+static char* getOutFileName(char const* file, const char* ext)
 {
     size_t len = strlen(file);
     char const* i = file + len - 1;
     for(; i - file >= 0; --i) {
         if(*i == '/') break;
         if(*i == '.') {
-            char* ret = (char*)malloc((i - file) + 9);
+            char* ret = (char*)malloc((i - file) + strlen(ext) + 1);
             strncpy(ret, file, i - file);
-            strcpy(ret + (i - file), ".out.jpg");
+            strcpy(ret + (i - file), ext);
             return ret;
         }
     }
-    char* ret = (char*)malloc(len + 8);
+    char* ret = (char*)malloc(len + strlen(ext));
     strcpy(ret, file);
-    strcpy(ret + len, ".out.jpg");
+    strcpy(ret + len, ext);
     return ret;
 }
 
@@ -117,10 +118,18 @@ static void process(char const* file)
         //alt = img;
     }
 
-    char* outFile = getOutFileName(file);
-    printf("%s: saving as %s\n", file, outFile);
-    savePixels(img, outFile);
-    free(outFile);
+    // FIXME make this an option
+    if(rec_fn != cgadither) {
+        char* outFile = getOutFileName(file, ".out.jpg");
+        printf("%s: saving as %s\n", file, outFile);
+        savePixels(img, outFile);
+        free(outFile);
+    } else {
+        char* outFile = getOutFileName(file, ".out.tga");
+        printf("%s: saving as %s\n", file, outFile);
+        tga_write(img, outFile);
+        free(outFile);
+    }
     free(img.pixels);
 }
 
