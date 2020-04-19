@@ -20,6 +20,8 @@ extern img_t mobord(img_t const);
 extern img_t faith(img_t const);
 extern img_t rgfilter(img_t const);
 
+extern img_t cgadither(img_t const);
+
 // fwd decl
 static void randomizer(char const*);
 static void process(char const*);
@@ -131,6 +133,7 @@ void randomizer(char const* file)
         faith,
         recolour,
         rgfilter,
+        cgadither,
     };
     int const size = sizeof(fns)/sizeof(fns[0]);
 
@@ -149,6 +152,7 @@ void usage(char const* name)
     fprintf(stderr, "                   -3 (mobord)\n");
     fprintf(stderr, "                   -4 (faith)\n");
     fprintf(stderr, "                   -5 (rgfilter)\n");
+    fprintf(stderr, "                   -6 (cgadither)\n");
     fprintf(stderr, "                   -r (random filter)\n");
     exit(255);
 }
@@ -186,6 +190,9 @@ int main(int argc, char* argv[])
         break;
     case '5':
         rec_fn = rgfilter;
+        break;
+    case '6':
+        rec_fn = cgadither;
         break;
     case 'r':
         processfn = randomizer;
