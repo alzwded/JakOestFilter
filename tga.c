@@ -43,13 +43,13 @@ void tga_write(img_t img, const char* outfile)
         p = img.pixels[i];
         buf[j++] = p.b | (p.g << 8) | (p.r << 16) | (0xFF << 24); // force alpha 1
         if(j >= sizeof(buf)/sizeof(buf[0])) {
-            printf("wrote %d\n", j);
+            //printf("wrote %d\n", j);
             fwrite(buf, sizeof(buf)/sizeof(buf[0]), sizeof(buf[0]), g);
             j = 0;
         }
     }
     if(j > 0) {
-        printf("wrote %d\n", j);
+        //printf("wrote %d\n", j);
         fwrite(buf, j, sizeof(buf[0]), g);
     }
 #if 0

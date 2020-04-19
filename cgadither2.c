@@ -203,12 +203,31 @@ static void _dither_w_c_b(void* data)
     for(j = 0; j < mydata->img.asHSV.w; ++j) {
         hsv_t p = A(mydata->img.asHSV, mydata->i, j);
         //         b     c      w
-        // lum 0.00..0.33..0.67..1.00
-        lum = floor(p.value * 3.f);
-        median = p.value * 3.f - lum;
+        // lum 0.00..0.15..0.85..1.00
         Nu = (float)MY(randomness, j) / (float)RAND_MAX;
-        float x = (Nu < median) ? sqrtf(Nu * median) : (1.f - sqrtf((1.f-Nu)*(1.f - median)));
-        wcb = (float)lum + median + x;
+        if(p.value > 0.5f) {
+            float a = 0.2, b = 1.f, c = 0.8;
+            float fc = (c-a)/(b-a);
+            float lum = p.value; //(p.value < fc) ? (a + sqrtf(p.value * (b-a) * (c-a))) : (b-sqrtf((1-p.value)*(b-a)*(b-c)));
+            float x = (Nu < fc) ? a + sqrtf(Nu * (b - a) * (c - a)) : (b-sqrtf(1-Nu)*(b-a)*(b-c));
+
+            lum = 2.f * lum - 1.f;
+            //printf("value = %f lum + x = %f\n", p.value, lum + x);
+            //printf("lum + x = %f\n", lum + x);
+            //printf(">> a %f b %f c %f fc %f Nu %f x %f\n", a, b, c, fc, Nu, x);
+            wcb = (lum + x > 0.6) ? 2 : 1;
+        } else {
+            float a = 0.0f, b = 0.8f, c = 0.2;
+            float fc = (c-a)/(b-a);
+            float lum = p.value; //(p.value < fc) ? (a + sqrtf(p.value * (b-a) * (c-a))) : (b-sqrtf((1-p.value)*(b-a)*(b-c)));
+            float x = (Nu < fc) ? a + sqrtf(Nu * (b - a) * (c - a)) : (b-sqrtf(1-Nu)*(b-a)*(b-c));
+
+            lum = 2.f * lum - 1.f;
+            wcb = (lum + x < -0.6) ? 0 : 1;
+            //printf("value = %f lum + x = %f\n", p.value, lum + x);
+            //printf(">> a %f b %f c %f fc %f Nu %f x %f\n", a, b, c, fc, Nu, x);
+            //printf("wcb = %d\n", wcb);
+        }
         MY(wcb, j) = wcb;
     }
 #undef MY
@@ -310,13 +329,18 @@ static void _dither_s(void* data)
 
     for(j = 0; j < mydata->img.asHSV.w; ++j) {
         hsv_t p = A(mydata->img.asHSV, mydata->i, j);
+        // project to triangle
+        float c = 0.33, b = 1.f, a = 0.f;
+        float sat = 1.f - p.saturation;
+        float fc = (c-a)/(b-a);
+        sat = (sat < fc) ? (a + sqrtf(sat * (b-a) * (c-a))) : (b - sqrtf((1-sat)*(b-a)*(b-c)));
 
         Nu = (float)MY(randomness, j) / (float)RAND_MAX;
-        median = 1.f - p.saturation; // c
+        median = sat;
         float x = (Nu < median) ? sqrtf(Nu * median) : (1.f - sqrtf((1.f-Nu)*(1.f - median)));
-        x = 2.f * x - 1.f;
+        //x = 2.f * x - 1.f;
         median = 2.f * median - 1.f;
-        MY(isGray, j) = median + x > 0.f;
+        MY(isGray, j) = median + x > 0.5f;
     }
 #undef MY
 }
@@ -355,27 +379,34 @@ static void _output_layer(void* data)
             if(MY(isWhite, j)) {
                 // TODO yellow in alternate pallette
                 p.r = p.g = p.b = 255;
+                //printf("gray -> white\n");
             } else {
                 // black is always black :-)
                 p.r = p.g = p.b = 0;
+                // printf("gray -> black\n");
             }
         } else {
             switch(MY(wcb, j)) {
                 case 0:
+                    //printf("B\n");
                     p.r = p.g = p.b = 0;
                     break;
                 case 2:
+                    //printf("W\n");
                     p.r = p.g = p.b = 255;
                     break;
                 case 1:
                     switch(MY(color, j)) {
                         case CYANI:
+                            //printf("cc\n");
                             p.r = 0;    p.g = 255;  p.b = 255;
                             break;
                         case MAGENTAI:
+                            //printf("cm\n");
                             p.r = 255;  p.g = 0;    p.b = 255;
                             break;
                         case YELLOWI:
+                            //printf("cy\n");
                             p.r = p.g = p.b = 255;
                             break;
                     }
@@ -507,7 +538,7 @@ img_t cgadither2(img_t const img)
         data->color = color;
         data->isGray = isGray;
         data->isWhite = isWhite;
-        data->wcb = isWhite;
+        data->wcb = wcb;
         _output_layer(data);
     }
 

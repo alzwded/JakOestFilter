@@ -102,12 +102,12 @@ static void process(char const* file)
         img = getSquare(img);
         free(alt.pixels);
         alt = img;
-    }
 
-    printf("%s: downsampling\n", file);
-    img = downSample800(img);
-    free(alt.pixels);
-    alt = img;
+        printf("%s: downsampling\n", file);
+        img = downSample800(img);
+        free(alt.pixels);
+        alt = img;
+    }
 
     printf("%s: recolouring\n", file);
     img = rec_fn(img);
