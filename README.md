@@ -101,6 +101,8 @@ So it goes step by step and computes dithering between Cyan and Magenta, grays a
     opt_alt implies the blue channel is 0
 ```
 
+The original `cgadither` filter is sort-of a snapshot in time on the way to `cgadither2`, but it yields some nice results by itself. `cgadither2` tries to do a better job to conserve reality, the number-less version is more of a toy. (wait, isn't this whole project a toy?)
+
 Conclusion
 ==========
 
@@ -122,7 +124,7 @@ TODO
 * better command argument parsing
 * more flexible pipelines (oof, we're starting to sound like ImageMagick, aren't we?!) to pick the serializer (jpg vs tga), the enable/disable the aspect ratio correcter, downsampler or frame, etc
 * ds800 should be make more generic to allow _just_ downsampling, not necessarily making things square
-* fix the "alternate pallette" when dithering colors -- RYG are different to MWC, so the dithering needs to be shifted a bit... c.f. a red parrot that gets R&Y dithering, even though red is part of the pallette
+* fix the "alternate pallette" when dithering colors *for cgadither(1)* (fixed for cgadither2) -- RYG are different to MWC, so the dithering needs to be shifted a bit... c.f. a red parrot that gets R&Y dithering, even though red is part of the pallette
 
 Usage
 =====
@@ -147,6 +149,11 @@ For the `cgadither` filters, the output will be a TARGA lossless 32bit file (`*.
 
 Changelog
 =========
+
+v1.5.1
+------
+
+* improve `cgadither2` by fixing pallette approximation and shadow detection  in `dither_s`
 
 v1.5.0
 ------

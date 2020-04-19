@@ -181,7 +181,7 @@ static void _dither_w_c_b(void* data)
         // lum 0.00..0.15..0.85..1.00
         Nu = (float)MY(randomness, j) / (float)RAND_MAX;
         if(p.value > 0.5f) {
-            const float a = 0.2, b = 1.f, c = 0.8;
+            const float a = 0.3, b = 1.f, c = 0.7;
             const float fc = (c-a)/(b-a);
             float lum = p.value; //(p.value < fc) ? (a + sqrtf(p.value * (b-a) * (c-a))) : (b-sqrtf((1-p.value)*(b-a)*(b-c)));
             float x = (Nu < fc) ? a + sqrtf(Nu * (b - a) * (c - a)) : (b-sqrtf(1-Nu)*(b-a)*(b-c));
@@ -190,15 +190,15 @@ static void _dither_w_c_b(void* data)
             //printf("value = %f lum + x = %f\n", p.value, lum + x);
             //printf("lum + x = %f\n", lum + x);
             //printf(">> a %f b %f c %f fc %f Nu %f x %f\n", a, b, c, fc, Nu, x);
-            wcb = (lum + x > 0.6) ? 2 : 1;
+            wcb = (lum + x > 0.4) ? 2 : 1;
         } else {
-            const float a = 0.0f, b = 0.8f, c = 0.2;
+            const float a = 0.0f, b = 0.7f, c = 0.3;
             const float fc = (c-a)/(b-a);
             float lum = p.value; //(p.value < fc) ? (a + sqrtf(p.value * (b-a) * (c-a))) : (b-sqrtf((1-p.value)*(b-a)*(b-c)));
             float x = (Nu < fc) ? a + sqrtf(Nu * (b - a) * (c - a)) : (b-sqrtf(1-Nu)*(b-a)*(b-c));
 
             lum = 2.f * lum - 1.f;
-            wcb = (lum + x < -0.6) ? 0 : 1;
+            wcb = (lum + x < -0.4) ? 0 : 1;
             //printf("value = %f lum + x = %f\n", p.value, lum + x);
             //printf(">> a %f b %f c %f fc %f Nu %f x %f\n", a, b, c, fc, Nu, x);
             //printf("wcb = %d\n", wcb);
@@ -217,11 +217,11 @@ static void _dither_m_c_y(void* data)
     short ah, bh;
     float median, Nu;
 
-#define MAGENTA 300 
-#define CYAN 180
+    const short MAGENTA = (!opt_alt) ? 300 : 0;
+    const short CYAN = (!opt_alt) ? 180 : 120;
 #define YELLOW 60
-#define MINUS_MAGENTA 60
-#define MINUS_CYAN 180
+    const short MINUS_MAGENTA = (!opt_alt) ? 60 : 0;
+    const short MINUS_CYAN = (!opt_alt) ? 180 : 240;
 #define MINUS_YELLOW 300
 #define MINUS(s) (360 - s)
 
@@ -284,11 +284,7 @@ static void _dither_m_c_y(void* data)
 
 #undef MINUS
 #undef YELLOW
-#undef MINUS_MAGENTA
-#undef MINUS_CYAN
 #undef MINUS_YELLOW
-#undef MAGENTA
-#undef CYAN
 #undef MY
 }
 
@@ -302,7 +298,7 @@ static void _dither_s(void* data)
     for(j = 0; j < mydata->img.asHSV.w; ++j) {
         hsv_t p = A(mydata->img.asHSV, mydata->i, j);
         // project to triangle
-        const float c = 0.33, b = 1.f, a = 0.f;
+        const float c = 0.3, b = 1.f, a = 0.f;
         float sat = 1.f - p.saturation;
         const float fc = (c-a)/(b-a);
         sat = (sat < fc) ? (a + sqrtf(sat * (b-a) * (c-a))) : (b - sqrtf((1-sat)*(b-a)*(b-c)));
@@ -310,8 +306,9 @@ static void _dither_s(void* data)
         Nu = (float)MY(randomness, j) / (float)RAND_MAX;
         median = sat;
         float x = (Nu < median) ? sqrtf(Nu * median) : (1.f - sqrtf((1.f-Nu)*(1.f - median)));
+        x = 2 * x - 1.f;
         median = 2.f * median - 1.f;
-        MY(isGray, j) = median + x > 0.5f;
+        MY(isGray, j) = median + x > 0.0;
     }
 #undef MY
 }

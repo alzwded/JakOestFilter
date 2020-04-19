@@ -5,6 +5,8 @@
 #include <omp.h>
 #include "common.h"
 
+// FIXME backport fixes to dither_s and dither_m_c here
+
 extern int opt_alt;
 
 static float PI = acos(-1);
