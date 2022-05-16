@@ -36,8 +36,8 @@ These try to expand the gamut for a part of the HSV cylinder, while decolouring 
 
 The `rgfilter` variant basically does away with the heuristics that detect the "sort-of used sometimes" colours and always uses a color section or Red-Green.
 
-The `cgadither` and `cgadither2` filters
-----------------------------------------
+The `cgadither*` filters
+------------------------
 
 These filters throw away 99% of colour, saturation and luminance information, and convert your image to what you would see on an old & basic CGA monitor.
 
@@ -102,6 +102,8 @@ So it goes step by step and computes dithering between Cyan and Magenta, grays a
 ```
 
 The original `cgadither` filter is sort-of a snapshot in time on the way to `cgadither2`, but it yields some nice results by itself. `cgadither2` tries to do a better job to conserve reality, the number-less version is more of a toy. (wait, isn't this whole project a toy?)
+
+The `cgafilterfs` works like `cgafilter2`, but uses Floyd-Steinberg dithering instead of random.
 
 Conclusion
 ==========

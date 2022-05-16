@@ -1,4 +1,4 @@
-PLA = i686
+PLA = x86-64
 CC = gcc
 LD = gcc
 EXE = jakoest

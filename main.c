@@ -26,6 +26,7 @@ extern img_t rgfilter(img_t const);
 
 extern img_t cgadither(img_t const);
 extern img_t cgadither2(img_t const);
+extern img_t cgaditherfs(img_t const);
 
 // fwd decl
 static void randomizer(char const*);
@@ -100,7 +101,7 @@ static void process(char const* file)
     img_t img = readPixels(file);
     img_t alt = img;
 
-    if(rec_fn != cgadither && rec_fn != cgadither2) {
+    if(rec_fn != cgadither && rec_fn != cgadither2 && rec_fn != cgaditherfs) {
         printf("%s: getting square\n", file);
         img = getSquare(img);
         free(alt.pixels);
@@ -125,7 +126,7 @@ static void process(char const* file)
     }
 
     // FIXME make this an option
-    if(rec_fn != cgadither && rec_fn != cgadither2) {
+    if(rec_fn != cgadither && rec_fn != cgadither2 && rec_fn != cgaditherfs) {
         char* outFile = getOutFileName(file, ".out.jpg");
         printf("%s: saving as %s\n", file, outFile);
         savePixels(img, outFile);
@@ -150,6 +151,7 @@ void randomizer(char const* file)
         rgfilter,
         cgadither,
         cgadither2,
+        cgaditherfs,
     };
     int const size = sizeof(fns)/sizeof(fns[0]);
 
@@ -172,6 +174,8 @@ void usage(char const* name)
     fprintf(stderr, "                   -6a (cgadither with RYGb pallette)\n");
     fprintf(stderr, "                   -7  (cgadither2)\n");
     fprintf(stderr, "                   -7a (cgadither2 with RYGb pallette)\n");
+    fprintf(stderr, "                   -8  (cgaditherfs)\n");
+    fprintf(stderr, "                   -8a (cgaditherfs with RYGb pallette)\n");
     fprintf(stderr, "                   -r  (random filter)\n");
     exit(255);
 }
@@ -216,6 +220,10 @@ int main(int argc, char* argv[])
         break;
     case '7':
         rec_fn = cgadither2;
+        if(argv[1][2] == 'a') opt_alt = 1;
+        break;
+    case '8':
+        rec_fn = cgaditherfs;
         if(argv[1][2] == 'a') opt_alt = 1;
         break;
     case 'r':

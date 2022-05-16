@@ -1,6 +1,8 @@
 #include "tga.h"
 #include <assert.h>
 #include <stdio.h>
+#include <inttypes.h>
+#include <stdint.h>
 
 struct TGAHeader {
     int8_t idLen;                           // 0
@@ -38,7 +40,7 @@ void tga_write(img_t img, const char* outfile)
                                                    //| (8 << 0) // 8bits of alpha
                                                    ;
     fwrite(&header, sizeof(struct TGAHeader), 1, g);
-    printf("total pixels: %d\n", img.w*img.h);
+    printf("total pixels: %" PRIu64 "\n", (uint64_t)img.w*img.h);
     for(i = 0, j = 0; i < img.w*img.h; ++i) {
         p = img.pixels[i];
         buf[j++] = p.b | (p.g << 8) | (p.r << 16) | (0xFF << 24); // force alpha 1
