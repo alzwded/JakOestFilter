@@ -6,151 +6,141 @@
 #include "common.h"
 
 extern int opt_alt;
+extern int opt_balt;
+extern int opt_calt;
 
 typedef struct {
     size_t i;
     img_t img;
-    float* luma;
-    float* color;
+    float* h,* s,* v;
     float* err;
 } tddata_t;
 
-#define COLOR_THRESH 4.f
-#define LUMA_THRESH 1.f
+#define COLOR_THRESH 2.f
 #define CLAMP(X, MIN, MAX) (X > MAX ? MAX : X < MIN ? MIN : X)
+#define MAX(A, B, C) ((A >= B && A >= C) ? A : (B >= A && B >= C) ? B : C)
+#define MIN(A, B, C) ((A <= B && A <= C) ? A : (B <= A && B <= C) ? B : C)
 #define MY(WHAT, J) (mydata->WHAT[mydata->i * mydata->img.w + J])
 #define MYP1(WHAT, J) (mydata->WHAT[(mydata->i+1) * mydata->img.w + J])
 #define DISTRIBUTE_ERR(ERR, J)\
     do {\
         if(J < mydata->img.w - 1)\
-            MY(err, J + 1) = err * 7.f/16.f;\
+            MY(err, J + 1) += err * 7.f/16.f;\
         if(mydata->i < mydata->img.h - 1) {\
             if(J > 0) \
-                MYP1(err, J - 1) = err * 3.f/16.f;\
-            MYP1(err, J) = err * 5.f/16.f;\
+                MYP1(err, J - 1) += err * 3.f/16.f;\
+            MYP1(err, J) += err * 5.f/16.f;\
             if(J < mydata->img.w - 1)\
-                MYP1(err, J + 1) = err * 1.f/16.f;\
+                MYP1(err, J + 1) += err * 1.f/16.f;\
         }\
     } while(0)
 
 
-static inline float _sqr(uint8_t x) { return (float)x * (float)x; }
-
-static inline float _computeLuma(pixel_t ip)
+static void _proc_toHSL(tddata_t* mydata)
 {
-    return ((float)(ip.r + ip.g + ip.b) / 3.f / 255.f) * LUMA_THRESH;
-}
-
-static inline float _computeColor(pixel_t ip, float lum)
-{
-    float r = (float)(ip.r) / 255.f;
-    float t = (float)(ip.g + ip.b) / 2.f / 255.f;
-    float b = (float)(ip.b) / 255.f;
-    float y = (float)(ip.r + ip.g) / 2.f / 255.f;
-    float wcmb = !opt_alt;
-    float rygb = opt_alt;
-    float rb = wcmb * r + rygb * y;
-    float gb = wcmb * t + rygb * b;
-#if 1
-    printf("For pixel #%02x%02x%02x\n\tr=%f\tt=%f\tb=%f\ty=%f\n\trb=%f\tgb=%f\n\tyield=%f\n",
-            ip.r, ip.g, ip.b,
-            r, t, b, y, rb, gb,
-            gb / (rb + gb) * 2.f - 1.f);
-#endif
-    return (gb / (rb + gb) * 2.f - 1.f) * COLOR_THRESH;
-}
-
-static void _proc_getLuma(void* data)
-{
-    tddata_t* mydata = (tddata_t*)data;
     size_t j;
 
     for(j = 0; j < mydata->img.w; ++j) {
-        MY(luma, j) = _computeLuma(A(mydata->img, mydata->i, j));
-    }
-}
+        pixel_t ip = A(mydata->img, mydata->i, j);
 
-static void _proc_getColor(void* data)
-{
-    tddata_t* mydata = (tddata_t*)data;
-    size_t j;
+        float M = MAX(ip.r, ip.g, ip.b)/255.f;
+        float m = MIN(ip.r, ip.g, ip.b)/255.f;
+        float c = M - m;
+        float v = M;
+        float s = (v < 0.0001 ? 0.f : c/v);
 
-    for(j = 0; j < mydata->img.w; ++j) {
-        MY(color, j) = _computeColor(A(mydata->img, mydata->i, j), MY(luma, j));
-    }
-}
-
-inline void _proc_ditherLuma(void* data)
-{
-    tddata_t* mydata = (tddata_t*)data;
-    size_t j;
-
-    for(j = 0; j < mydata->img.w; ++j) {
-        float Nu = MY(err, j);
-        float ol = MY(luma, j);
-        float nl = round(CLAMP(ol + Nu, 0, LUMA_THRESH));
-        float err = ol - nl;
-        DISTRIBUTE_ERR(err, j);
-        MY(luma, j) = nl;
-#if 0
-        pixel_t p = A(mydata->img, mydata->i, j);
-        printf("For pixel #%02x%02x%02x x=%zd y=%zd\n\tol=%f\tnl=%f\terr=%f\tNu=%f\n",
-                p.r, p.g, p.b,
-                mydata->i, j,
-                ol,
-                nl,
-                err,
-                Nu);
-#endif
-    }
-}
-
-inline void _proc_ditherColor(void* data)
-{
-    tddata_t* mydata = (tddata_t*)data;
-    size_t j;
-
-    for(j = 0; j < mydata->img.w; ++j) {
-        float Nu = MY(err, j);
-        float oc = MY(color, j);
-        float nc = round(CLAMP(oc + Nu, -COLOR_THRESH, COLOR_THRESH));
-        float err = oc - nc;
-#if 0
-        printf(">>> %f %f\n", oc+Nu, nc);
-#endif
-        DISTRIBUTE_ERR(err, j);
-        MY(color, j) = nc;
-    }
-}
-
-static void _output_layer(void* data)
-{
-    tddata_t* mydata = (tddata_t*)data;
-    size_t j;
-
-    for(j = 0; j < mydata->img.w; ++j) {
-        pixel_t p = A(mydata->img, mydata->i, j);
-
-        if(MY(luma, j) < -.5f) {
-            p.r = p.g = p.b = 0;
+        float rm, gc;
+        if(!opt_calt) {
+            rm = (!opt_alt ? (ip.r+ip.b)/2.f : ip.r);
+            gc = (!opt_alt ? ip.g : (ip.g+ip.b)/2.f);
         } else {
-            float c = MY(color, j);
-            p.r = 255 * (c < 0.5f);
-            p.g = 255 * (c > -0.5f);
-            p.b = 255 * (!opt_alt);
-            if(p.r == 255 && p.g == 255 && MY(luma,j) < 0.5f) {
-                p.b = p.r = p.g = 0.f;
-            }
+            rm = (!opt_alt ? (ip.r+ip.g)/2.f : (ip.r + ip.b)/2.f);
+            gc = (!opt_alt ? ip.b : ip.g);
         }
 
-        printf("%f\n", MY(luma, j));
-        p.r = p.g = p.b = MY(luma, j) * 255;
-        printf("%d\n", p.r);
+        float h = (gc - rm)/(gc + rm);
+        h = (float)(opt_balt) * (h * COLOR_THRESH) + (float)(!opt_balt) * (h * .5f + .5f);
+
+        MY(h, j) = h;
+        MY(s, j) = s;
+        MY(v, j) = v;
+
+#if 0
+        printf("#%02x%02x%02x = (%f,%f,%f)\n",
+                ip.r, ip.g, ip.b,
+                h, s, v);
+#endif
+    }
+}
+
+inline void _proc_ditherValue(tddata_t* mydata)
+{
+    size_t j;
+
+    for(j = 0; j < mydata->img.w; ++j) {
+        float Nu = MY(err, j);
+        float old = MY(v, j);
+        float new = round(CLAMP(old + Nu, 0.f, 1.f));
+        float err = old - new;
+        DISTRIBUTE_ERR(err, j);
+        MY(v, j) = new;
+    }
+}
+
+inline void _proc_ditherSaturation(tddata_t* mydata)
+{
+    size_t j;
+
+    for(j = 0; j < mydata->img.w; ++j) {
+        float Nu = MY(err, j);
+        float old = MY(s, j);
+        float new = round(CLAMP(old + Nu, 0.f, 1.f));
+        float err = old - new;
+        DISTRIBUTE_ERR(err, j);
+        MY(s, j) = new;
+    }
+}
+
+inline void _proc_ditherHue(tddata_t* mydata)
+{
+    size_t j;
+
+    for(j = 0; j < mydata->img.w; ++j) {
+        float Nu = MY(err, j);
+        float old = MY(h, j);
+        float new = (!opt_balt)
+            ? round(CLAMP(old + Nu, 0.f, 1.f))
+            : round(CLAMP(old + Nu, -COLOR_THRESH, COLOR_THRESH));
+        float err = old - new;
+        DISTRIBUTE_ERR(err, j);
+        MY(h, j) = new;
+    }
+}
+
+static void _output_layer(tddata_t* mydata)
+{
+    size_t j;
+
+    for(j = 0; j < mydata->img.w; ++j) {
+        pixel_t p = A(mydata->img, mydata->i, j);
+
+        if(MY(s, j) < .5f) {
+            //printf("desaturated ");
+            p.r = p.g = p.b = (MY(v, j) >= .5f) * 255;
+        } else if(MY(v, j) < .5f) {
+            //printf("devalued ");
+            p.r = p.g = p.b = 0;
+        } else {
+            //printf("use hue ");
+            p.r = (MY(h, j) < .5f) * 255;
+            p.g = (MY(h, j) > .5f-opt_balt) * 255;
+            p.b = (!opt_alt) * 255;
+        }
 
 #if 0
         printf("%3zdx%3zd: MGW, RGB = \n\t%f %f %f\n\t%x %x %x\n",
                 mydata->i, j,
-                MY(luma, j), MY(color, j), MY(err, j),
+                MY(h, j), MY(s, j), MY(v, j),
                 p.r, p.g, p.b);
 #endif
 
@@ -163,14 +153,13 @@ static void _output_layer(void* data)
 
    No. Step                         Colour Space
    0. in RGB                        (r[], g[], b[])
-   1. RGB -> HSL                    (h[], s[], l[])
-   2. dither_m_c_y                  (M|C|Y, s[], l[])
-   3. dither_s                      (M|C|Y, isGray?, l[])
-   4. dither_l                      (M|C|Y, isGray?, isWhite?)
-   5. dither_w_c_b                  (M|C|Y, isGray?, isWhite?, white|color|black)
+   1. RGB -> HSV                    (h[], s[], v[])
+   2. dither_h                      (M|C|Y, s[], l[])
+   3. dither_s                      (M|C|Y, isGray?, v[])
+   4. dither_v                      (M|C|Y, isGray?, isColor?)
    6. _output_layer                 (r[], g[], b[])
         isGray?
-            isWhite?
+            isColor?
                 out = FFFFFF
             else
                 out = 000000
@@ -187,6 +176,7 @@ static void _output_layer(void* data)
                 is C
                     out = 00FFFF
     opt_alt implies the blue channel is 0
+    opt_balt allows "yellow", i.e. Y or W are also used as a color when s & v are 1
  */
 img_t cgaditherfs(img_t const img)
 {
@@ -195,23 +185,24 @@ img_t cgaditherfs(img_t const img)
     size_t i, j;
     tddata_t* ddatas;
 
-    float* color = (float*)malloc(img.w * img.h * sizeof(float));
-    float* luma = (float*)malloc(img.w * img.h * sizeof(float));
+    float* h = (float*)malloc(img.w * img.h * sizeof(float));
+    float* s = (float*)malloc(img.w * img.h * sizeof(float));
+    float* v = (float*)malloc(img.w * img.h * sizeof(float));
     float* err = (float*)malloc(img.w * img.h * sizeof(float));
 
     // process
-    // 1. compute luma
+    // 1. compute HSV
     ddatas = (tddata_t*)malloc(img.h * sizeof(tddata_t));
 #pragma omp parallel for
     for(i = 0; i < img.h; ++i) {
         tddata_t* data = &ddatas[i];
         data->i = i;
         data->img = img;
-        data->luma = luma;
-        data->color = color;
+        data->h = h;
+        data->s = s;
+        data->v = v;
         data->err = err;
-        _proc_getLuma(data);
-        _proc_getColor(data);
+        _proc_toHSL(data);
     }
 
     // 2. dither colors to magenta or cyan
@@ -220,13 +211,19 @@ img_t cgaditherfs(img_t const img)
     for(i = 0; i < img.h; ++i) {
         tddata_t* data = &ddatas[i];
         data->i = i;
-        _proc_ditherLuma(data);
+        _proc_ditherHue(data);
     }
     memset(err, 0, img.w * img.h * sizeof(float));
     for(i = 0; i < img.h; ++i) {
         tddata_t* data = &ddatas[i];
         data->i = i;
-        _proc_ditherColor(data);
+        _proc_ditherSaturation(data);
+    }
+    memset(err, 0, img.w * img.h * sizeof(float));
+    for(i = 0; i < img.h; ++i) {
+        tddata_t* data = &ddatas[i];
+        data->i = i;
+        _proc_ditherValue(data);
     }
 
     // 6. distribute pixels to C, M, black or white
@@ -238,8 +235,9 @@ img_t cgaditherfs(img_t const img)
         _output_layer(data);
     }
 
-    free(color);
-    free(luma);
+    free(h);
+    free(s);
+    free(v);
     free(err);
     free(ddatas);
     

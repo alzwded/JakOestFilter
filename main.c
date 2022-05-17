@@ -7,6 +7,10 @@
 
 // alternate CGA pallette in the cgadither filters
 int opt_alt = 0;
+// extended range on CGA pallette for FS dithering
+int opt_balt = 0;
+// extended range on CGA pallette for FS dithering
+int opt_calt = 0;
 
 // external subroutines
 extern img_t readPixels(char const*);
@@ -174,8 +178,10 @@ void usage(char const* name)
     fprintf(stderr, "                   -6a (cgadither with RYGb pallette)\n");
     fprintf(stderr, "                   -7  (cgadither2)\n");
     fprintf(stderr, "                   -7a (cgadither2 with RYGb pallette)\n");
-    fprintf(stderr, "                   -8  (cgaditherfs)\n");
-    fprintf(stderr, "                   -8a (cgaditherfs with RYGb pallette)\n");
+    fprintf(stderr, "                   -8[aec] (cgaditherfs)\n");
+    fprintf(stderr, "                     a = use alternate color pallette\n");
+    fprintf(stderr, "                     e = use expanded color pallette\n");
+    fprintf(stderr, "                     c = alternative color bias\n");
     fprintf(stderr, "                   -r  (random filter)\n");
     exit(255);
 }
@@ -224,7 +230,13 @@ int main(int argc, char* argv[])
         break;
     case '8':
         rec_fn = cgaditherfs;
-        if(argv[1][2] == 'a') opt_alt = 1;
+        {
+            for(int i = 2; argv[1][i]; ++i) {
+                if(argv[1][i] == 'a') opt_alt = 1;
+                if(argv[1][i] == 'e') opt_balt = 1;
+                if(argv[1][i] == 'c') opt_calt = 1;
+            }
+        }
         break;
     case 'r':
         processfn = randomizer;

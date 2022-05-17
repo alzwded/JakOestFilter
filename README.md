@@ -103,7 +103,7 @@ So it goes step by step and computes dithering between Cyan and Magenta, grays a
 
 The original `cgadither` filter is sort-of a snapshot in time on the way to `cgadither2`, but it yields some nice results by itself. `cgadither2` tries to do a better job to conserve reality, the number-less version is more of a toy. (wait, isn't this whole project a toy?)
 
-The `cgafilterfs` works like `cgafilter2`, but uses Floyd-Steinberg dithering instead of random.
+The `cgafilterfs` works like `cgafilter2`, but uses Floyd-Steinberg dithering instead of random. `cgafilterfs` has yet another alt color pallette ("extended" range) which tries to use the "bright" color as a color, and not just as white. With "narrow" color range, then it only outputs the BW for low saturation and BCM for high saturation. With "extended" it outputs BW for low saturation and BCMW for high saturation.
 
 Conclusion
 ==========
@@ -152,6 +152,22 @@ For the `cgadither` filters, the output will be a TARGA lossless 32bit file (`*.
 
 Changelog
 =========
+
+v1.6.0
+------
+
+* Add `cgaditherfs` filter
+    + downsamples images to 2-bit CGA using Floyd-Steinberg dithering
+    + it has quite some options to hopefully get you a pretty picture:
+        - alt pallette (default is white-cyan-magenta-black; the alt one is red-yellow-green-black)
+        - extended vs narrow color range
+            * this filter works in HSV space
+            * by default, if a pixel is desaturated, the output is black or bright (=white or yellow), if a pixel is devalued, the output is black, else it's one of the other two colors
+            * with extended range, if it's neither desaturated nor devalued, then the bright color is considered and "in-between" color
+        - alternate color bias
+            * by default, for WCMb, it takes `M=(r+b)/2` and `g` and dithers between them; for RYGb, it takes `r` and `C=(g+b)/2` and dithers between them
+            * with the alternate color bias, for WCMb, it takes `Y=(r+g)/2` and `b`, and finally and respectively for RYGb, it uses `M=(r+b)/2` and `g`
+        + all these options help you tweak the dithering to get you something nice looking, because there are situations where you get some real duds
 
 v1.5.1
 ------
