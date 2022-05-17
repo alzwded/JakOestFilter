@@ -186,7 +186,7 @@ void usage(char const* name)
     fprintf(stderr, "                     c = alternative color bias\n");
     fprintf(stderr, "                   -9[a] (cgaditherfss)\n");
     fprintf(stderr, "                     a = use alternate color pallette\n");
-    fprintf(stderr, "                     e = use expanded color pallette\n");
+    fprintf(stderr, "                     c = alternative color bias\n");
     fprintf(stderr, "                   -r  (random filter)\n");
     exit(255);
 }

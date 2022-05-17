@@ -1,4 +1,4 @@
-RVERSION = 1.6.2
+RVERSION = 1.6.3
 VERSION = '"'$(RVERSION)'"'
 CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION) -m64 -msse -msse2 -msse3 -mssse3 -msse4 -mfpmath=sse -ffast-math -fopenmp -march=haswell
 LDOPTS = -lm -lgomp -pthread

@@ -105,7 +105,7 @@ The original `cgadither` filter is sort-of a snapshot in time on the way to `cga
 
 The `cgafilterfs` works like `cgafilter2`, but uses Floyd-Steinberg dithering instead of random. `cgafilterfs` has yet another alt color pallette ("extended" range) which tries to use the "bright" color as a color, and not just as white. With "narrow" color range, then it only outputs the BW for low saturation and BCM for high saturation. With "extended" it outputs BW for low saturation and BCMW for high saturation.
 
-**TODO**: create a `cgafilterfs2` which does smarter color mapping like `cgafilter2`.
+The `cgafilterfs2` improves on `cgafilterfs` to get more natural images. This works in luma-chroma space.
 
 Conclusion
 ==========
@@ -145,6 +145,8 @@ usage: jakoest32 <filter> pic1.jpg pic2.jpg pic3.jpg ...
                    -6a (cgadither with RYGb pallette)
                    -7  (cgadither2)
                    -7a (cgadither2 with RYGb pallette)
+                   -8* (cgaditherfs)
+                   -9* (cgaditherfs2)
                    -r  (random filter)
 ```
 
@@ -154,6 +156,17 @@ For the `cgadither` filters, the output will be a TARGA lossless 32bit file (`*.
 
 Changelog
 =========
+
+v1.6.2
+------
+
+* add `cgaditherfs2` that improves upon v1; it works in luma-chroma and produces more natural images.
+* available options are alt color palette and alt blue bias
+
+v1.6.1
+------
+
+* fix RYGb palette
 
 v1.6.0
 ------
