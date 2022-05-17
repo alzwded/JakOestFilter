@@ -127,6 +127,7 @@ static void _output_layer(tddata_t* mydata)
         if(MY(s, j) < .5f) {
             //printf("desaturated ");
             p.r = p.g = p.b = (MY(v, j) >= .5f) * 255;
+            p.b *= !opt_alt;
         } else if(MY(v, j) < .5f) {
             //printf("devalued ");
             p.r = p.g = p.b = 0;
