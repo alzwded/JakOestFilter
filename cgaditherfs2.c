@@ -105,20 +105,7 @@ inline void _proc_ditherChroma(tddata_t* mydata)
         float old = MY(c, j);
         float new = round(CLAMP(old + Nu, -1.f, 1.f));
         float err = old - new;
-        float altNu = MY(err2, j);
-        float altNew = round(CLAMP( (old + Nu)*0.5f+0.5f, 0.f, 1.f ));
-        float err2 = old*0.5f+0.5f - altNew;
-        pixel_t ip = A(mydata->img, mydata->i, j);
-        float l = (ip.r + ip.g + ip.b) / 3.f / 255.f;
-        float lNu = MY(err2, j);
-        float lNew = round(CLAMP(l + lNu, 0.f, 1.f));
-        float lErr = l - lNew;
-        if(new == 0.f||1) {
-            new = 2.f*altNew-1.f;
-        }
         DISTRIBUTE_ERR(err, j);
-        DISTRIBUTE_ERR2(err2, j);
-        DISTRIBUTE_ERR3(lNew, j);
         MY(c, j) = new;
     }
 }
@@ -139,8 +126,8 @@ static void _output_layer(tddata_t* mydata)
             if(MY(c, j) == 100.f) {
                 p.r = p.g = p.b = 0;
             } else {
-                p.r = (MY(c, j) < .5f) * 255;
-                p.g = (MY(c, j) > -.5f) * 255;
+                p.r = (MY(c, j) < .0f) * 255;
+                p.g = (MY(c, j) >= -.0f) * 255;
                 p.b = (!opt_alt) * 255;
             }
         }
