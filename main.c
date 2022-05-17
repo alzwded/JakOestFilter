@@ -31,6 +31,7 @@ extern img_t rgfilter(img_t const);
 extern img_t cgadither(img_t const);
 extern img_t cgadither2(img_t const);
 extern img_t cgaditherfs(img_t const);
+extern img_t cgaditherfs2(img_t const);
 
 // fwd decl
 static void randomizer(char const*);
@@ -105,7 +106,7 @@ static void process(char const* file)
     img_t img = readPixels(file);
     img_t alt = img;
 
-    if(rec_fn != cgadither && rec_fn != cgadither2 && rec_fn != cgaditherfs) {
+    if(rec_fn != cgadither && rec_fn != cgadither2 && rec_fn != cgaditherfs && rec_fn != cgaditherfs2) {
         printf("%s: getting square\n", file);
         img = getSquare(img);
         free(alt.pixels);
@@ -130,7 +131,7 @@ static void process(char const* file)
     }
 
     // FIXME make this an option
-    if(rec_fn != cgadither && rec_fn != cgadither2 && rec_fn != cgaditherfs) {
+    if(rec_fn != cgadither && rec_fn != cgadither2 && rec_fn != cgaditherfs && rec_fn != cgaditherfs2) {
         char* outFile = getOutFileName(file, ".out.jpg");
         printf("%s: saving as %s\n", file, outFile);
         savePixels(img, outFile);
@@ -156,6 +157,7 @@ void randomizer(char const* file)
         cgadither,
         cgadither2,
         cgaditherfs,
+        cgaditherfs2,
     };
     int const size = sizeof(fns)/sizeof(fns[0]);
 
@@ -182,6 +184,9 @@ void usage(char const* name)
     fprintf(stderr, "                     a = use alternate color pallette\n");
     fprintf(stderr, "                     e = use expanded color pallette\n");
     fprintf(stderr, "                     c = alternative color bias\n");
+    fprintf(stderr, "                   -9[a] (cgaditherfss)\n");
+    fprintf(stderr, "                     a = use alternate color pallette\n");
+    fprintf(stderr, "                     e = use expanded color pallette\n");
     fprintf(stderr, "                   -r  (random filter)\n");
     exit(255);
 }
@@ -234,6 +239,15 @@ int main(int argc, char* argv[])
             for(int i = 2; argv[1][i]; ++i) {
                 if(argv[1][i] == 'a') opt_alt = 1;
                 if(argv[1][i] == 'e') opt_balt = 1;
+                if(argv[1][i] == 'c') opt_calt = 1;
+            }
+        }
+        break;
+    case '9':
+        rec_fn = cgaditherfs2;
+        {
+            for(int i = 2; argv[1][i]; ++i) {
+                if(argv[1][i] == 'a') opt_alt = 1;
                 if(argv[1][i] == 'c') opt_calt = 1;
             }
         }
