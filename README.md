@@ -105,6 +105,8 @@ The original `cgadither` filter is sort-of a snapshot in time on the way to `cga
 
 The `cgafilterfs` works like `cgafilter2`, but uses Floyd-Steinberg dithering instead of random. `cgafilterfs` has yet another alt color pallette ("extended" range) which tries to use the "bright" color as a color, and not just as white. With "narrow" color range, then it only outputs the BW for low saturation and BCM for high saturation. With "extended" it outputs BW for low saturation and BCMW for high saturation.
 
+**TODO**: create a `cgafilterfs2` which does smarter color mapping like `cgafilter2`.
+
 Conclusion
 ==========
 
