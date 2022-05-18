@@ -157,11 +157,21 @@ For the `cgadither` filters, the output will be a TARGA lossless 32bit file (`*.
 Changelog
 =========
 
-v1.6.2
+v1.6.4
 ------
+
+* change color biases for `cgaditherfs2` one last time
+    - options `9` and `9a` will compute the distance to M-C or R-G respectively
+    - options `9c` and `9ac` focus more on teal and less on blue
+    - options `9b` and `9bc` focus more on green and less on blue
+* just run through all 6 of them (or heck, see [demo/do.csh](./demo/do.csh) and just run all cga ditherers and pick the version that looks the pretties)
+
+v1.6.2/1.6.3
+------------
 
 * add `cgaditherfs2` that improves upon v1; it works in luma-chroma and produces more natural images.
 * available options are alt color palette and alt blue bias
+* accidently bumped the version twice
 
 v1.6.1
 ------
