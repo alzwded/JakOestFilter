@@ -9,7 +9,7 @@
 int opt_alt = 0;
 // extended range on CGA pallette for FS dithering
 int opt_balt = 0;
-// extended range on CGA pallette for FS dithering
+// alternate color bias in FS ditherers
 int opt_calt = 0;
 
 // external subroutines
@@ -187,6 +187,7 @@ void usage(char const* name)
     fprintf(stderr, "                   -9[a] (cgaditherfss)\n");
     fprintf(stderr, "                     a = use alternate color pallette\n");
     fprintf(stderr, "                     c = alternative color bias\n");
+    fprintf(stderr, "                     b = another alternative color bias\n");
     fprintf(stderr, "                   -r  (random filter)\n");
     exit(255);
 }
@@ -249,6 +250,10 @@ int main(int argc, char* argv[])
             for(int i = 2; argv[1][i]; ++i) {
                 if(argv[1][i] == 'a') opt_alt = 1;
                 if(argv[1][i] == 'c') opt_calt = 1;
+                if(argv[1][i] == 'b') opt_balt = 1;
+            }
+            if(opt_calt && opt_balt) {
+                fprintf(stderr, "WARN: option 9c overrides 9b!\n");
             }
         }
         break;

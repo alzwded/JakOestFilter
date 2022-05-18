@@ -5,8 +5,9 @@
 #include <omp.h>
 #include "common.h"
 
-extern int opt_alt;
-extern int opt_calt;
+extern int opt_alt; // RYGb
+extern int opt_balt; // bias2
+extern int opt_calt; // bias1
 
 typedef struct {
     size_t i;
@@ -42,12 +43,15 @@ static void _proc_toHSL(tddata_t* mydata)
         pixel_t ip = A(mydata->img, mydata->i, j);
         float l = (ip.r + ip.g + ip.b) / 3.f / 255.f * 2.f - 1.f;
         float rm, gc;
-        if(!opt_calt) {
+        if(!opt_calt && !opt_balt) {
             rm = (!opt_alt ? (ip.r+ip.b)/2.f : ip.r);
-            gc = (!opt_alt ? ip.g : (ip.g+ip.b)/2.f);
-        } else {
-            rm = (!opt_alt ? (ip.r+ip.g)/2.f : (ip.r + ip.b)/2.f);
-            gc = (!opt_alt ? ip.b : ip.g);
+            gc = (!opt_alt ? (ip.g+ip.b)/2.f : ip.g);
+        } else if(opt_calt) {
+            rm = (!opt_alt ? (ip.r+ip.g)/2.f : ip.r);
+            gc = (!opt_alt ? (ip.b+ip.g)/2.f : (ip.g+ip.b)/2.f);
+        } else if(opt_balt) {
+            rm = (!opt_alt ? ip.r : (ip.r+ip.b)/2.f);
+            gc = (!opt_alt ? ip.g : ip.g);
         }
 
         float c = (gc - rm)/(gc + rm);
