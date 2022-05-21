@@ -13,7 +13,8 @@ typedef struct {
     size_t i;
     img_t img;
     float* c,* l;
-    float* err;
+    float* errl,* errc;
+    int* oc;
 } tddata_t;
 
 #define CLAMP(X, MIN, MAX) (X > MAX ? MAX : X < MIN ? MIN : X)
@@ -23,14 +24,21 @@ typedef struct {
 #define MYP1(WHAT, J) (mydata->WHAT[(mydata->i+1) * mydata->img.w + J])
 #define DISTRIBUTE_ERR(ERR, J)\
     do {\
-        if(J < mydata->img.w - 1)\
-            MY(err, J + 1) += ERR * 7.f/16.f;\
+        if(J < mydata->img.w - 1) {\
+            MY(errl, J + 1) += ERR[0] * 7.f/16.f;\
+            MY(errc, J + 1) += ERR[1] * 7.f/16.f;\
+        }\
         if(mydata->i < mydata->img.h - 1) {\
-            if(J > 0) \
-                MYP1(err, J - 1) += ERR * 3.f/16.f;\
-            MYP1(err, J) += ERR * 5.f/16.f;\
-            if(J < mydata->img.w - 1)\
-                MYP1(err, J + 1) += ERR * 1.f/16.f;\
+            if(J > 0) {\
+                MYP1(errl, J - 1) += ERR[0] * 3.f/16.f;\
+                MYP1(errc, J - 1) += ERR[1] * 3.f/16.f;\
+            }\
+            MYP1(errl, J) += ERR[0] * 5.f/16.f;\
+            MYP1(errc, J) += ERR[1] * 5.f/16.f;\
+            if(J < mydata->img.w - 1) {\
+                MYP1(errl, J + 1) += ERR[0] * 1.f/16.f;\
+                MYP1(errc, J + 1) += ERR[1] * 1.f/16.f;\
+            }\
         }\
     } while(0)
 
@@ -61,31 +69,47 @@ static void _proc_toHSL(tddata_t* mydata)
     }
 }
 
-inline void _proc_ditherLuma(tddata_t* mydata)
+inline void vec_sub(const float v1[], const float v2[], float v3[])
 {
-    size_t j;
-
-    for(j = 0; j < mydata->img.w; ++j) {
-        float Nu = MY(err, j);
-        float old = MY(l, j);
-        float new = round(CLAMP(old + Nu, -1.f, 1.f));
-        float err = old - new;
-        DISTRIBUTE_ERR(err, j);
-        MY(l, j) = new;
-    }
+    v3[0] = v1[0] - v2[0];
+    v3[1] = v1[1] - v2[1];
 }
 
-inline void _proc_ditherChroma(tddata_t* mydata)
+inline float vec_len2(const float v[])
+{
+    return v[0]*v[0] + v[1]*v[1];
+}
+
+inline void _proc_dither(tddata_t* mydata)
 {
     size_t j;
 
     for(j = 0; j < mydata->img.w; ++j) {
-        float Nu = MY(err, j);
-        float old = MY(c, j);
-        float new = round(CLAMP(old + Nu, -1.f, 1.f));
-        float err = old - new;
+        float old[] = { MY(l, j), MY(c, j) };
+        float oldoff[2] = { MY(l, j) + MY(errl, j), MY(c, j) + MY(errc, j) };
+        float new[2];
+        float err[2];
+        float dist[4];
+        static const float WCMb[][2] = {
+            { 1.f, 0.f }, // W
+            { 0.f,-1.f }, // M
+            { 0.f, 1.f }, // C
+            {-1.f, 0.f }, // B
+        };
+        int mini = -1;
+        float minlen = 9999.f;
+        for(int i = 0; i < 4; ++i) {
+            float v[2], len;
+            vec_sub(oldoff, WCMb[i], v);
+            len = vec_len2(v);
+            if(len < minlen) {
+                minlen = len;
+                mini = i;
+            }
+        }
+        MY(oc, j) = mini;
+        vec_sub(old, WCMb[mini], err);
         DISTRIBUTE_ERR(err, j);
-        MY(c, j) = new;
     }
 }
 
@@ -96,15 +120,24 @@ static void _output_layer(tddata_t* mydata)
     for(j = 0; j < mydata->img.w; ++j) {
         pixel_t p = A(mydata->img, mydata->i, j);
 
-        if(MY(l, j) < -0.5f) {
-            p.r = p.g = p.b = 0;
-        } else if(MY(l, j) > 0.5f) {
+        switch(MY(oc, j)) {
+        case 0:
             p.r = p.g = p.b = 255;
             p.b *= !opt_alt;
-        } else {
-            p.r = (MY(c, j) < .0f) * 255;
-            p.g = (MY(c, j) >= -.0f) * 255;
-            p.b = (!opt_alt) * 255;
+            break;
+        case 1:
+            p.r = p.b = 255;
+            p.g = 0;
+            p.b *= !opt_alt;
+            break;
+        case 2:
+            p.g = p.b = 255;
+            p.r = 0;
+            p.b *= !opt_alt;
+            break;
+        case 3:
+            p.r = p.g = p.b = 0;
+            break;
         }
 
         A(mydata->img, mydata->i, j) = p;
@@ -122,7 +155,7 @@ static void _output_layer(tddata_t* mydata)
    4. _output_layer                 (r[], g[], b[])
     opt_alt implies the blue channel is 0
  */
-img_t cgaditherfs2(img_t const img)
+img_t cgaditherfs3(img_t const img)
 {
     img_t ret = { img.w, img.h, (pixel_t*)malloc(img.w * img.h * sizeof(pixel_t)) };
 
@@ -130,8 +163,10 @@ img_t cgaditherfs2(img_t const img)
     tddata_t* ddatas;
 
     float* c = (float*)malloc(img.w * img.h * sizeof(float));
+    int* oc = (int*)malloc(img.w * img.h * sizeof(int));
     float* l = (float*)malloc(img.w * img.h * sizeof(float));
-    float* err = (float*)malloc(img.w * img.h * sizeof(float));
+    float* errl = (float*)malloc(img.w * img.h * sizeof(float));
+    float* errc = (float*)malloc(img.w * img.h * sizeof(float));
 
     // process
     // 1. compute HSV
@@ -142,25 +177,21 @@ img_t cgaditherfs2(img_t const img)
         data->i = i;
         data->img = img;
         data->c = c;
+        data->oc = oc;
         data->l = l;
-        data->err = err;
+        data->errl = errl;
+        data->errc = errc;
         _proc_toHSL(data);
     }
 
     // 2. dither luma to determine if we're bright, black or one of the colours
-    memset(err, 0, img.w * img.h * sizeof(float));
+    memset(errl, 0, img.w * img.h * sizeof(float));
+    memset(errc, 0, img.w * img.h * sizeof(float));
     // can't omp because each pixel depends on previous 4
     for(i = 0; i < img.h; ++i) {
         tddata_t* data = &ddatas[i];
         data->i = i;
-        _proc_ditherLuma(data);
-    }
-    // 2. dither chroma to one of the two colours
-    memset(err, 0, img.w * img.h * sizeof(float));
-    for(i = 0; i < img.h; ++i) {
-        tddata_t* data = &ddatas[i];
-        data->i = i;
-        _proc_ditherChroma(data);
+        _proc_dither(data);
     }
 
     // 4. distribute pixels to C, M, black or white
@@ -173,8 +204,10 @@ img_t cgaditherfs2(img_t const img)
     }
 
     free(c);
+    free(oc);
     free(l);
-    free(err);
+    free(errl);
+    free(errc);
     free(ddatas);
     
     return ret;

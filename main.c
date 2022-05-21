@@ -28,10 +28,12 @@ extern img_t mobord(img_t const);
 extern img_t faith(img_t const);
 extern img_t rgfilter(img_t const);
 
+static int isCGADither = 0;
 extern img_t cgadither(img_t const);
 extern img_t cgadither2(img_t const);
 extern img_t cgaditherfs(img_t const);
 extern img_t cgaditherfs2(img_t const);
+extern img_t cgaditherfs3(img_t const);
 
 // fwd decl
 static void randomizer(char const*);
@@ -106,7 +108,7 @@ static void process(char const* file)
     img_t img = readPixels(file);
     img_t alt = img;
 
-    if(rec_fn != cgadither && rec_fn != cgadither2 && rec_fn != cgaditherfs && rec_fn != cgaditherfs2) {
+    if(!isCGADither) {
         printf("%s: getting square\n", file);
         img = getSquare(img);
         free(alt.pixels);
@@ -130,8 +132,7 @@ static void process(char const* file)
         //alt = img;
     }
 
-    // FIXME make this an option
-    if(rec_fn != cgadither && rec_fn != cgadither2 && rec_fn != cgaditherfs && rec_fn != cgaditherfs2) {
+    if(!isCGADither) {
         char* outFile = getOutFileName(file, ".out.jpg");
         printf("%s: saving as %s\n", file, outFile);
         savePixels(img, outFile);
@@ -158,6 +159,7 @@ void randomizer(char const* file)
         cgadither2,
         cgaditherfs,
         cgaditherfs2,
+        cgaditherfs3,
     };
     int const size = sizeof(fns)/sizeof(fns[0]);
 
@@ -184,7 +186,11 @@ void usage(char const* name)
     fprintf(stderr, "                     a = use alternate color pallette\n");
     fprintf(stderr, "                     e = use expanded color pallette\n");
     fprintf(stderr, "                     c = alternative color bias\n");
-    fprintf(stderr, "                   -9[a] (cgaditherfss)\n");
+    fprintf(stderr, "                   -9[acb] (cgaditherfs2)\n");
+    fprintf(stderr, "                     a = use alternate color pallette\n");
+    fprintf(stderr, "                     c = alternative color bias\n");
+    fprintf(stderr, "                     b = another alternative color bias\n");
+    fprintf(stderr, "                   -C[acb] (cgaditherfs3)\n");
     fprintf(stderr, "                     a = use alternate color pallette\n");
     fprintf(stderr, "                     c = alternative color bias\n");
     fprintf(stderr, "                     b = another alternative color bias\n");
@@ -228,14 +234,17 @@ int main(int argc, char* argv[])
         break;
     case '6':
         rec_fn = cgadither;
+        isCGADither = 1;
         if(argv[1][2] == 'a') opt_alt = 1;
         break;
     case '7':
         rec_fn = cgadither2;
+        isCGADither = 1;
         if(argv[1][2] == 'a') opt_alt = 1;
         break;
     case '8':
         rec_fn = cgaditherfs;
+        isCGADither = 1;
         {
             for(int i = 2; argv[1][i]; ++i) {
                 if(argv[1][i] == 'a') opt_alt = 1;
@@ -246,6 +255,21 @@ int main(int argc, char* argv[])
         break;
     case '9':
         rec_fn = cgaditherfs2;
+        isCGADither = 1;
+        {
+            for(int i = 2; argv[1][i]; ++i) {
+                if(argv[1][i] == 'a') opt_alt = 1;
+                if(argv[1][i] == 'c') opt_calt = 1;
+                if(argv[1][i] == 'b') opt_balt = 1;
+            }
+            if(opt_calt && opt_balt) {
+                fprintf(stderr, "WARN: option 9c overrides 9b!\n");
+            }
+        }
+        break;
+    case 'C':
+        rec_fn = cgaditherfs3;
+        isCGADither = 1;
         {
             for(int i = 2; argv[1][i]; ++i) {
                 if(argv[1][i] == 'a') opt_alt = 1;

@@ -103,9 +103,13 @@ So it goes step by step and computes dithering between Cyan and Magenta, grays a
 
 The original `cgadither` filter is sort-of a snapshot in time on the way to `cgadither2`, but it yields some nice results by itself. `cgadither2` tries to do a better job to conserve reality, the number-less version is more of a toy. (wait, isn't this whole project a toy?)
 
-The `cgafilterfs` works like `cgafilter2`, but uses Floyd-Steinberg dithering instead of random. `cgafilterfs` has yet another alt color pallette ("extended" range) which tries to use the "bright" color as a color, and not just as white. With "narrow" color range, then it only outputs the BW for low saturation and BCM for high saturation. With "extended" it outputs BW for low saturation and BCMW for high saturation.
+The `cgaditherfs` works like `cgadither2`, but uses Floyd-Steinberg dithering instead of random. `cgaditherfs` has yet another alt color pallette ("extended" range) which tries to use the "bright" color as a color, and not just as white. With "narrow" color range, then it only outputs the BW for low saturation and BCM for high saturation. With "extended" it outputs BW for low saturation and BCMW for high saturation.
 
 The `cgafilterfs2` improves on `cgafilterfs` to get more natural images. This works in luma-chroma space.
+
+The `cgaditherfs3` is the one that is implemented properly as works as you would expect.
+
+The ones you'd want to use are `cgadither2` (random noise dithering) and `cgaditherfs3` (Floyd-Steinberg Dithering).
 
 Conclusion
 ==========

@@ -1,10 +1,10 @@
-RVERSION = 1.6.4
+RVERSION = 1.6.5
 VERSION = '"'$(RVERSION)'"'
 CFLAGS = -c -O3 -I. --std=c99 -DVERSION=$(VERSION) -m64 -msse -msse2 -msse3 -mssse3 -msse4 -mfpmath=sse -ffast-math -fopenmp -march=haswell
 LDOPTS = -lm -lgomp -pthread
-SRCS = main.c ds800.c gs.c pixelio.c rc.c frame.c common.h mosaic.c mobord.c faith.c Makefile cgadither.c tga.c cgadither2.c cgaditherfs.c cgaditherfs2.c
+SRCS = main.c ds800.c gs.c pixelio.c rc.c frame.c common.h mosaic.c mobord.c faith.c Makefile cgadither.c tga.c cgadither2.c cgaditherfs.c cgaditherfs2.c cgaditherfs3.c
 
-OBJS = main.$(OBJEXT) ds800.$(OBJEXT) gs.$(OBJEXT) pixelio.$(OBJEXT) rc.$(OBJEXT) frame.$(OBJEXT) mosaic.$(OBJEXT) mobord.$(OBJEXT) faith.$(OBJEXT) cgadither.$(OBJEXT) tga.$(OBJEXT) cgadither2.$(OBJEXT) cgaditherfs.$(OBJEXT) cgaditherfs2.$(OBJEXT)
+OBJS = main.$(OBJEXT) ds800.$(OBJEXT) gs.$(OBJEXT) pixelio.$(OBJEXT) rc.$(OBJEXT) frame.$(OBJEXT) mosaic.$(OBJEXT) mobord.$(OBJEXT) faith.$(OBJEXT) cgadither.$(OBJEXT) tga.$(OBJEXT) cgadither2.$(OBJEXT) cgaditherfs.$(OBJEXT) cgaditherfs2.$(OBJEXT) cgaditherfs3.$(OBJEXT)
 
 $(EXE): $(OBJS)
 	$(LD) -o $(EXE) $(OBJS) $(LDOPTS) $(ADD_LDOPTS)
