@@ -164,8 +164,14 @@ void randomizer(char const* file)
     int const size = sizeof(fns)/sizeof(fns[0]);
 
     int idx = (int)(rand() % size);
+    int rrr = (int)rand();
+    opt_alt =  (rrr & 0x1) >> 0;
+    opt_balt = (rrr & 0x2) >> 1;
+    opt_calt = (rrr & 0x4) >> 2;
+    isCGADither = idx > 4;
 
     rec_fn = fns[idx];
+
 
     return process(file);
 }
