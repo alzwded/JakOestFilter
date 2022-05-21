@@ -281,6 +281,7 @@ int main(int argc, char* argv[])
                 if(argv[1][i] == 'a') opt_alt = 1;
                 if(argv[1][i] == 'c') opt_calt = 1;
                 if(argv[1][i] == 'b') opt_balt = 1;
+                if(argv[1][i] == 'A') opt_alt = 2;
             }
             if(opt_calt && opt_balt) {
                 fprintf(stderr, "WARN: option 9c overrides 9b!\n");

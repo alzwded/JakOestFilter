@@ -52,14 +52,14 @@ static void _proc_toHSL(tddata_t* mydata)
         float l = (ip.r + ip.g + ip.b) / 3.f / 255.f * 2.f - 1.f;
         float rm, gc;
         if(!opt_calt && !opt_balt) {
-            rm = (!opt_alt ? (ip.r+ip.b)/2.f : ip.r);
-            gc = (!opt_alt ? (ip.g+ip.b)/2.f : ip.g);
+            rm = (!opt_alt ? (ip.r+ip.b)/2.f : (opt_alt == 1 ? ip.r : ip.r));
+            gc = (!opt_alt ? (ip.g+ip.b)/2.f : (opt_alt == 1 ? ip.g : (ip.g+ip.b)/2.f));
         } else if(opt_calt) {
-            rm = (!opt_alt ? (ip.r+ip.g)/2.f : ip.r);
-            gc = (!opt_alt ? (ip.b+ip.g)/2.f : (ip.g+ip.b)/2.f);
+            rm = (!opt_alt ? (ip.r+ip.g)/2.f : (opt_alt == 1 ? ip.r : (ip.r+ip.g)/2.f));
+            gc = (!opt_alt ? (ip.b+ip.g)/2.f : (opt_alt == 1 ? (ip.g+ip.b)/2.f : (ip.g+ip.b)/2.f));
         } else if(opt_balt) {
-            rm = (!opt_alt ? ip.r : (ip.r+ip.b)/2.f);
-            gc = (!opt_alt ? ip.g : ip.g);
+            rm = (!opt_alt ? ip.r : (opt_alt == 1 ? (ip.r+ip.b)/2.f : (ip.r+ip.g)/2.f));
+            gc = (!opt_alt ? ip.g : (opt_alt == 1 ? ip.g : ip.b));
         }
 
         float c = (gc - rm)/(gc + rm);
@@ -121,19 +121,19 @@ static void _output_layer(tddata_t* mydata)
         pixel_t p = A(mydata->img, mydata->i, j);
 
         switch(MY(oc, j)) {
-        case 0:
+        case 0: // bright
             p.r = p.g = p.b = 255;
-            p.b *= !opt_alt;
+            p.b *= (opt_alt != 1);
             break;
-        case 1:
+        case 1: // M,R,R
             p.r = p.b = 255;
             p.g = 0;
-            p.b *= !opt_alt;
+            p.b *= (opt_alt == 0);
             break;
-        case 2:
+        case 2: // C,G,C
             p.g = p.b = 255;
             p.r = 0;
-            p.b *= !opt_alt;
+            p.b *= (opt_alt != 1);
             break;
         case 3:
             p.r = p.g = p.b = 0;
