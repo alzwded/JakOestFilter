@@ -150,9 +150,9 @@ static void _output_layer(tddata_t* mydata)
    No. Step                         Colour Space
    0. in RGB                        (r[], g[], b[])
    1. RGB -> LC                     (c[], l[])
-   2. dither_l                      (c[], b|c|W)
-   3. dither_c                      (M|C, b|c|W)
-   4. _output_layer                 (r[], g[], b[])
+   2. dither                        (b|M|C|W)
+        considers l and c to be XY coordinates from -1..+1
+   3. _output_layer                 (r[], g[], b[])
     opt_alt implies the blue channel is 0
  */
 img_t cgaditherfs3(img_t const img)
@@ -184,7 +184,7 @@ img_t cgaditherfs3(img_t const img)
         _proc_toHSL(data);
     }
 
-    // 2. dither luma to determine if we're bright, black or one of the colours
+    // 2. dither vec2(luma, chrome) between (-1,0),(0,1),(1,0),(0,-1)
     memset(errl, 0, img.w * img.h * sizeof(float));
     memset(errc, 0, img.w * img.h * sizeof(float));
     // can't omp because each pixel depends on previous 4
@@ -194,7 +194,7 @@ img_t cgaditherfs3(img_t const img)
         _proc_dither(data);
     }
 
-    // 4. distribute pixels to C, M, black or white
+    // 3. distribute pixels to C, M, black or white
 #pragma omp parallel for
     for(i = 0; i < img.h; ++i) {
         tddata_t* data = &ddatas[i];

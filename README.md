@@ -127,6 +127,8 @@ I still like it. I continue to learn stuff :-)
 TODO
 ====
 
+* Add 3rd color pallette (White-Red-Cyan-Black) and low instensity mode
+    + option 'A' (WRCb) and modifier 'l' (low intensity)
 * Upsampling to make stuff look more cartoony.
 * raise sharpness / contrast (as a combo, I know what I mean by this)
 * better command argument parsing
@@ -160,6 +162,11 @@ For the `cgadither` filters, the output will be a TARGA lossless 32bit file (`*.
 
 Changelog
 =========
+
+v1.6.5
+------
+
+Final (?) `cgaditherfs3`.
 
 v1.6.4
 ------
